@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
-import { generateAdaptiveQuestions } from "@/lib/llm";
+import { generateAdaptiveQuestions, executeFailoverLLM } from "@/lib/llm";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 // Standard static questions for reference/validation
 const STATIC_QUESTIONS: Record<number, string> = {
@@ -25,6 +27,109 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // 1. Fetch user session and past history context to enable "remembering"
+    const session = await getServerSession(authOptions);
+    const userId = session?.user ? (session.user as { id?: string }).id : null;
+
+    let historyContext = "";
+    if (userId && supabaseAdmin) {
+      try {
+        const { data: pastInterviews } = await supabaseAdmin
+          .from("interviews")
+          .select("*")
+          .eq("user_id", userId)
+          .eq("status", "completed")
+          .order("created_at", { ascending: false })
+          .limit(3);
+
+        if (pastInterviews && pastInterviews.length > 0) {
+          historyContext = pastInterviews.map((item: any, idx: number) => `
+Past Session #${idx + 1}:
+- Current Role: ${item.current_role || "Unknown"}
+- Target Goal: ${item.target_role || "Unknown"}
+- Savings: ${item.savings || "Unknown"}
+- Monthly Expenses: ${item.monthly_expenses || "Unknown"}
+- Timeline: ${item.timeframe || "Unknown"}
+- Location: ${item.location || "Unknown"}
+`).join("\n");
+        }
+      } catch (err) {
+        // Suppress
+      }
+    }
+
+    // 2. Identify the current question being asked
+    let currentQuestion = "";
+    if (step <= 7) {
+      currentQuestion = STATIC_QUESTIONS[step];
+    } else {
+      let adaptiveQs: any[] = [];
+      if (supabaseAdmin && !String(interviewId).startsWith("mock-")) {
+        try {
+          const { data: interview } = await supabaseAdmin
+            .from("interviews")
+            .select("adaptive_questions")
+            .eq("id", interviewId)
+            .single();
+          adaptiveQs = interview?.adaptive_questions || [];
+        } catch (e) {}
+      } else if (body.adaptiveQuestions) {
+        adaptiveQs = body.adaptiveQuestions;
+      }
+      const q = adaptiveQs.find((q: any) => q.id === step);
+      currentQuestion = q ? q.question : "Please answer the follow-up question.";
+    }
+
+    // 3. Classify and resolve user input via LLM
+    let isAnswer = true;
+    let resolvedAnswer = answer;
+    let replyMessage = "";
+
+    try {
+      const systemInstruction = `You are the Runway360 career transition coach.
+The user is in the middle of a 10-question intake interview.
+The current question they are asked to answer is: "${currentQuestion}".
+
+Here is the user's historical profile from their previous sessions:
+${historyContext || "None"}
+
+Your job is to analyze the user's input: "${answer}".
+Determine if they are answering the current question, OR if they are asking a free-form question / requesting ideas / seeking advice.
+
+Rules for resolution:
+1. If the user refers to their past history (e.g. "same as last time", "same role", "refer to my old budget", "yes, from my previous session"), resolve the exact value from the history context.
+   Set "isAnswer" to true, and put the resolved actual value in "resolvedAnswer".
+2. If they are directly answering the question (e.g. "I am a dev", "$5000", "New York"), set "isAnswer" to true, and put their response in "resolvedAnswer".
+3. If they are asking a question, seeking ideas, or requesting guidance (e.g. "what ideas do you have?", "how much savings do I need?", "can you suggest some pivots?"), set "isAnswer" to false, and write a helpful, brief, conversational reply in "reply". Warn them that you will repeat the question when they are ready.
+
+Format your response as a JSON object matching this schema exactly:
+{
+  "isAnswer": boolean,
+  "resolvedAnswer": "string",
+  "reply": "string"
+}`;
+
+      const llmResponse = await executeFailoverLLM(systemInstruction, `User input: "${answer}"`);
+      const parsed = JSON.parse(llmResponse);
+      isAnswer = parsed.isAnswer;
+      resolvedAnswer = parsed.resolvedAnswer || answer;
+      replyMessage = parsed.reply || "";
+    } catch (llmErr) {
+      console.warn("LLM classification failed, falling back to direct answer processing:", llmErr);
+      isAnswer = true;
+      resolvedAnswer = answer;
+    }
+
+    if (!isAnswer) {
+      // The user asked a question or sought ideas. We return the reply without advancing the step!
+      return NextResponse.json({
+        interviewId,
+        currentStep: step,
+        status: "in_progress",
+        nextQuestion: replyMessage,
+      });
+    }
+
     // If Supabase is not configured or in mock mode, run in mock mode
     if (!supabaseAdmin || String(interviewId).startsWith("mock-")) {
       let nextStep = step + 1;
@@ -38,7 +143,7 @@ export async function POST(req: NextRequest) {
             currentRole: "Professional",
             location: "Worldwide",
             timeframe: "6 months",
-            targetRole: answer,
+            targetRole: resolvedAnswer,
           });
           return NextResponse.json({
             interviewId,
@@ -92,7 +197,7 @@ export async function POST(req: NextRequest) {
               currentRole: "Professional",
               location: "Worldwide",
               timeframe: "6 months",
-              targetRole: answer,
+              targetRole: resolvedAnswer,
             });
             return NextResponse.json({
               interviewId: "mock-interview-id-" + Date.now(),
@@ -148,51 +253,49 @@ export async function POST(req: NextRequest) {
     // State machine based on current step
     switch (step) {
       case 1:
-        updateData.name = answer;
+        updateData.name = resolvedAnswer;
         updateData.current_step = 2;
         nextQuestion = STATIC_QUESTIONS[2];
         break;
 
       case 2:
-        updateData.current_role = answer;
+        updateData.current_role = resolvedAnswer;
         updateData.current_step = 3;
         nextQuestion = STATIC_QUESTIONS[3];
         break;
 
       case 3:
-        // Handle if frontend provides structured details or raw string
         if (financialData && typeof financialData === "object") {
-          updateData.annual_income = financialData.annualIncome || answer;
-          updateData.savings = financialData.savings || answer;
+          updateData.annual_income = financialData.annualIncome || resolvedAnswer;
+          updateData.savings = financialData.savings || resolvedAnswer;
         } else {
-          // If simple string answer, parse or save directly
-          updateData.annual_income = answer;
-          updateData.savings = answer;
+          updateData.annual_income = resolvedAnswer;
+          updateData.savings = resolvedAnswer;
         }
         updateData.current_step = 4;
         nextQuestion = STATIC_QUESTIONS[4];
         break;
 
       case 4:
-        updateData.location = answer;
+        updateData.location = resolvedAnswer;
         updateData.current_step = 5;
         nextQuestion = STATIC_QUESTIONS[5];
         break;
 
       case 5:
-        updateData.monthly_expenses = answer;
+        updateData.monthly_expenses = resolvedAnswer;
         updateData.current_step = 6;
         nextQuestion = STATIC_QUESTIONS[6];
         break;
 
       case 6:
-        updateData.timeframe = answer;
+        updateData.timeframe = resolvedAnswer;
         updateData.current_step = 7;
         nextQuestion = STATIC_QUESTIONS[7];
         break;
 
       case 7:
-        updateData.target_role = answer;
+        updateData.target_role = resolvedAnswer;
         updateData.current_step = 8;
 
         // Generate adaptive Q8-Q10 via Gemini using Q1-Q7 answers
@@ -200,7 +303,7 @@ export async function POST(req: NextRequest) {
         const currentRole = interview.current_role;
         const location = interview.location;
         const timeframe = interview.timeframe;
-        const targetRole = answer; // updated target_role
+        const targetRole = resolvedAnswer;
 
         try {
           const adaptive = await generateAdaptiveQuestions({
@@ -226,7 +329,7 @@ export async function POST(req: NextRequest) {
 
       case 8:
         if (adaptiveQuestionsList.length > 0) {
-          adaptiveQuestionsList[0].answer = answer;
+          adaptiveQuestionsList[0].answer = resolvedAnswer;
           updateData.adaptive_questions = adaptiveQuestionsList;
         }
         updateData.current_step = 9;
@@ -235,7 +338,7 @@ export async function POST(req: NextRequest) {
 
       case 9:
         if (adaptiveQuestionsList.length > 1) {
-          adaptiveQuestionsList[1].answer = answer;
+          adaptiveQuestionsList[1].answer = resolvedAnswer;
           updateData.adaptive_questions = adaptiveQuestionsList;
         }
         updateData.current_step = 10;
@@ -244,7 +347,7 @@ export async function POST(req: NextRequest) {
 
       case 10:
         if (adaptiveQuestionsList.length > 2) {
-          adaptiveQuestionsList[2].answer = answer;
+          adaptiveQuestionsList[2].answer = resolvedAnswer;
           updateData.adaptive_questions = adaptiveQuestionsList;
         }
         updateData.current_step = 11;
