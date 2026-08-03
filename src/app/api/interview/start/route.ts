@@ -8,6 +8,16 @@ export async function POST() {
     const session = await getServerSession(authOptions);
     const userId = session?.user ? (session.user as { id?: string }).id : null;
 
+    // If Supabase is not configured, run in mock mode
+    if (!supabaseAdmin) {
+      return NextResponse.json({
+        interviewId: "mock-interview-id-" + Date.now(),
+        currentStep: 1,
+        status: "in_progress",
+        isMock: true
+      });
+    }
+
     // Create a new blank interview entry in the database
     const { data, error } = await supabaseAdmin
       .from("interviews")

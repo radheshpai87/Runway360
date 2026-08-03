@@ -25,6 +25,52 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // If Supabase is not configured or in mock mode, run in mock mode
+    if (!supabaseAdmin || String(interviewId).startsWith("mock-")) {
+      let nextStep = step + 1;
+      let nextQuestion = "";
+      if (nextStep <= 7) {
+        nextQuestion = STATIC_QUESTIONS[nextStep];
+      } else if (nextStep === 8) {
+        try {
+          const adaptive = await generateAdaptiveQuestions({
+            name: "Candidate",
+            currentRole: "Professional",
+            location: "Worldwide",
+            timeframe: "6 months",
+            targetRole: answer,
+          });
+          return NextResponse.json({
+            interviewId,
+            currentStep: 8,
+            status: "in_progress",
+            nextQuestion: adaptive.practicalQuestion,
+            mockAdaptive: [
+              { id: 8, question: adaptive.practicalQuestion, answer: null, type: "practical" },
+              { id: 9, question: adaptive.psychologicalQuestion, answer: null, type: "psychological" },
+              { id: 10, question: adaptive.wildcardQuestion, answer: null, type: "wildcard" },
+            ]
+          });
+        } catch (err) {
+          nextQuestion = "What practical barriers do you anticipate in this pivot?";
+        }
+      } else if (nextStep === 9) {
+        nextQuestion = "How do you plan to handle psychological challenges?";
+      } else if (nextStep === 10) {
+        nextQuestion = "If offered a stable bridge job, would you take it?";
+      } else {
+        nextStep = 11;
+        nextQuestion = "";
+      }
+
+      return NextResponse.json({
+        interviewId,
+        currentStep: nextStep,
+        status: nextStep === 11 ? "completed" : "in_progress",
+        nextQuestion,
+      });
+    }
+
     // 1. Fetch current interview progress
     const { data: interview, error: fetchError } = await supabaseAdmin
       .from("interviews")
