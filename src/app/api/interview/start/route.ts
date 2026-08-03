@@ -32,6 +32,16 @@ export async function POST() {
 
     if (error) {
       console.error("Supabase error starting interview:", error);
+      if (error.message?.includes("API key") || error.message?.includes("JWT") || error.code === "PGRST301") {
+        console.warn("⚠️ Fallback: Invalid Supabase API keys. Swapping to Mock Session.");
+        return NextResponse.json({
+          interviewId: "mock-interview-id-" + Date.now(),
+          currentStep: 1,
+          status: "in_progress",
+          isMock: true,
+          warning: "Invalid Supabase API key. Running in Mock Mode."
+        });
+      }
       return NextResponse.json({ error: "Failed to initialize interview session." }, { status: 500 });
     }
 
