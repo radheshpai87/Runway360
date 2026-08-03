@@ -13,13 +13,17 @@ export const metadata: Metadata = {
   description: "Calculate your financial runway, assess risk thresholds, and build a personalized roadmap for your career pivot.",
 };
 
+import { Providers } from "./providers";
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="en"
       className={`${poppins.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }
