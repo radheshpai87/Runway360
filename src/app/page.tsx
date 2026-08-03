@@ -652,7 +652,10 @@ export default function Home() {
 
                     <div className="space-y-1.5 pt-1">
                       <div className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">Past Audits</div>
-                      <div className="max-h-36 overflow-y-auto space-y-1 pr-1 border-t border-b border-neutral-100 py-1.5">
+                      <div 
+                        data-lenis-prevent
+                        className="max-h-36 overflow-y-auto space-y-1 pr-1 border-t border-b border-neutral-100 py-1.5"
+                      >
                         {historyLoading ? (
                           <div className="text-[10px] text-neutral-400 text-center py-2">Loading...</div>
                         ) : historyList.length === 0 ? (
@@ -736,6 +739,7 @@ export default function Home() {
                     `}} />
 
                     <div 
+                      data-lenis-prevent
                       className="no-scrollbar space-y-2 max-h-[206px] overflow-y-auto pr-0.5" 
                       style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
                     >
@@ -1017,7 +1021,10 @@ export default function Home() {
               </div>
 
               {/* Message List */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-5 bg-[#FAF5EB]/20">
+              <div 
+                data-lenis-prevent
+                className="flex-1 overflow-y-auto p-6 space-y-5 bg-[#FAF5EB]/20"
+              >
                 {messages.map((msg, idx) => (
                   <div 
                     key={idx} 
