@@ -79,7 +79,6 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (fetchError || !interview) {
-      console.error("Error fetching interview:", fetchError);
       if (fetchError?.message?.includes("API key") || fetchError?.message?.includes("JWT") || fetchError?.code === "PGRST301") {
         console.warn("⚠️ Fallback: Invalid Supabase API keys on submit-answer. Swapping to Mock Session.");
         let nextStep = step + 1;
@@ -125,6 +124,7 @@ export async function POST(req: NextRequest) {
           nextQuestion,
         });
       }
+      console.error("Error fetching interview:", fetchError);
       return NextResponse.json({ error: "Interview session not found." }, { status: 404 });
     }
 
