@@ -351,13 +351,14 @@ export default function Home() {
   };
 
   // Start the interview session
-  const startInterview = async (forceNewSession = false) => {
+  const startInterview = async (forceNewSession: any = false) => {
     setIsLoading(true);
+    const isForce = forceNewSession === true;
     try {
       const res = await fetch("/api/interview/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ forceNew: forceNewSession })
+        body: JSON.stringify({ forceNew: isForce })
       });
       const data = await res.json();
       
