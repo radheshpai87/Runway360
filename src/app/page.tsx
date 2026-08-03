@@ -736,7 +736,7 @@ export default function Home() {
                     `}} />
 
                     <div 
-                      className="no-scrollbar space-y-2 max-h-[360px] overflow-y-auto pr-0.5" 
+                      className="no-scrollbar space-y-2 max-h-[206px] overflow-y-auto pr-0.5" 
                       style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
                     >
                       {historyLoading ? (
