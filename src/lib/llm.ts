@@ -68,7 +68,7 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeout: numb
 /**
  * Orchestrator: Try Groq -> Mistral -> Gemini failover pipeline
  */
-async function executeFailoverLLM(
+export async function executeFailoverLLM(
   systemInstruction: string,
   userPrompt: string
 ): Promise<string> {
