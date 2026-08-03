@@ -1188,38 +1188,38 @@ export default function Home() {
             </div>
 
             {/* Navigation Tabs */}
-            <div className="flex border-b-2 border-[#111111] gap-2">
+            <div className="flex bg-white border-2 border-[#111111] p-1.5 rounded-2xl w-fit gap-2 shadow-[4px_4px_0px_0px_rgba(17,17,17,1)] relative z-10">
               <button 
                 onClick={() => setActiveTab("plan")}
-                className={`py-3 px-6 text-sm font-bold border-b-4 transition-all flex items-center gap-2 ${
+                className={`py-2.5 px-5 text-xs font-bold rounded-xl flex items-center gap-2 border-2 transition-all cursor-pointer ${
                   activeTab === "plan" 
-                    ? "border-[#111111] text-[#111111]" 
-                    : "border-transparent text-neutral-500 hover:text-neutral-800"
+                    ? "bg-[#E7B511] text-[#111111] border-[#111111] shadow-[2px_2px_0px_0px_rgba(17,17,17,1)]" 
+                    : "bg-transparent text-neutral-500 border-transparent hover:text-neutral-800"
                 }`}
               >
-                <Calendar className="h-4 w-4" />
+                <Calendar className="h-3.5 w-3.5" />
                 Transition Blueprint
               </button>
               <button 
                 onClick={() => setActiveTab("journey")}
-                className={`py-3 px-6 text-sm font-bold border-b-4 transition-all flex items-center gap-2 ${
+                className={`py-2.5 px-5 text-xs font-bold rounded-xl flex items-center gap-2 border-2 transition-all cursor-pointer ${
                   activeTab === "journey" 
-                    ? "border-[#111111] text-[#111111]" 
-                    : "border-transparent text-neutral-500 hover:text-neutral-800"
+                    ? "bg-[#E7B511] text-[#111111] border-[#111111] shadow-[2px_2px_0px_0px_rgba(17,17,17,1)]" 
+                    : "bg-transparent text-neutral-500 border-transparent hover:text-neutral-800"
                 }`}
               >
-                <Map className="h-4 w-4" />
+                <Map className="h-3.5 w-3.5" />
                 Journey & Obstacles
               </button>
               <button 
                 onClick={() => setActiveTab("runway")}
-                className={`py-3 px-6 text-sm font-bold border-b-4 transition-all flex items-center gap-2 ${
+                className={`py-2.5 px-5 text-xs font-bold rounded-xl flex items-center gap-2 border-2 transition-all cursor-pointer ${
                   activeTab === "runway" 
-                    ? "border-[#111111] text-[#111111]" 
-                    : "border-transparent text-neutral-500 hover:text-neutral-800"
+                    ? "bg-[#E7B511] text-[#111111] border-[#111111] shadow-[2px_2px_0px_0px_rgba(17,17,17,1)]" 
+                    : "bg-transparent text-neutral-500 border-transparent hover:text-neutral-800"
                 }`}
               >
-                <Coins className="h-4 w-4" />
+                <Coins className="h-3.5 w-3.5" />
                 Simulation Sandbox
               </button>
             </div>
