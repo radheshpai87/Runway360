@@ -379,6 +379,7 @@ export default function Home() {
             { sender: "bot", text: `Welcome back! Resuming your session at step ${data.currentStep}.` },
             { sender: "bot", text: currentQ }
           ]);
+        } else {
           // Start a fresh session
           setPlanData(null);
           // If Google Auth provides the user's name, skip Step 1
