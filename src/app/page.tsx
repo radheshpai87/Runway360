@@ -593,87 +593,6 @@ export default function Home() {
         <div className="flex items-center gap-3">
           {status === "authenticated" ? (
             <>
-              {/* History Button & Dropdown */}
-              <div className="relative">
-                <button 
-                  onClick={() => {
-                    setHistoryOpen(!historyOpen);
-                    setProfileOpen(false);
-                  }}
-                  title="Conversation History"
-                  className="flex items-center justify-center bg-white border-2 border-[#111111] p-1.5 rounded-lg shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] hover:bg-neutral-50 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer h-9 w-9"
-                >
-                  <History className="h-5 w-5 text-[#111111]" />
-                </button>
-
-                {historyOpen && (
-                  <div className="absolute right-0 mt-3 w-80 bg-white border-2 border-[#111111] p-5 rounded-2xl shadow-[4px_4px_0px_0px_rgba(17,17,17,1)] z-50 space-y-4">
-                    <div className="flex items-center justify-between border-b-2 border-neutral-100 pb-2">
-                      <span className="text-xs font-extrabold uppercase tracking-wider text-[#111111]">
-                        Conversation History
-                      </span>
-                      <span className="text-[9px] text-[#5c5950] font-mono font-bold bg-[#EFDFBB] border border-[#111111] px-1.5 py-0.5 rounded">
-                        {historyList.length} Total
-                      </span>
-                    </div>
-
-                    <style dangerouslySetInnerHTML={{__html: `
-                      .no-scrollbar::-webkit-scrollbar {
-                        display: none;
-                      }
-                    `}} />
-
-                    <div 
-                      className="no-scrollbar space-y-2 max-h-[360px] overflow-y-auto pr-0.5" 
-                      style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-                    >
-                      {historyLoading ? (
-                        <div className="text-[11px] text-neutral-400 text-center py-4 font-bold">Loading history...</div>
-                      ) : historyList.length === 0 ? (
-                        <div className="text-[11px] text-neutral-400 text-center py-4 font-bold">No past conversations found.</div>
-                      ) : (
-                        historyList.map((item: any, idx: number) => {
-                          const dateStr = new Date(item.created_at).toLocaleDateString(undefined, {
-                            month: "short",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit"
-                          });
-                          const isComplete = item.status === "completed";
-                          return (
-                            <button
-                              key={item.id}
-                              onClick={() => {
-                                setHistoryOpen(false);
-                                loadPastInterview(item);
-                              }}
-                              className="w-full text-left bg-[#FAF5EB] hover:bg-[#EFDFBB]/40 border-2 border-[#111111] rounded-xl p-3 transition-all flex flex-col gap-1 relative overflow-hidden shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] hover:shadow-none hover:translate-y-0.5 cursor-pointer"
-                            >
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs font-extrabold text-[#111111] truncate max-w-[70%]">
-                                  {item.target_role || `Pivot #${historyList.length - idx}`}
-                                </span>
-                                <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded border border-[#111111] ${
-                                  isComplete 
-                                    ? "bg-emerald-100 text-emerald-800" 
-                                    : "bg-amber-100 text-amber-800"
-                                }`}>
-                                  {isComplete ? "Done" : `Step ${item.current_step}`}
-                                </span>
-                              </div>
-                              <div className="text-[10px] text-neutral-500 flex justify-between items-center mt-1">
-                                <span className="font-medium truncate max-w-[60%]">From: {item.current_role || "Unknown"}</span>
-                                <span className="font-mono text-[9px] font-bold text-neutral-400">{dateStr}</span>
-                              </div>
-                            </button>
-                          );
-                        })
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-
               {/* Profile Button & Dropdown */}
               <div className="relative">
                 <button 
@@ -782,6 +701,87 @@ export default function Home() {
                     >
                       Sign Out
                     </button>
+                  </div>
+                )}
+              </div>
+
+              {/* History Button & Dropdown */}
+              <div className="relative">
+                <button 
+                  onClick={() => {
+                    setHistoryOpen(!historyOpen);
+                    setProfileOpen(false);
+                  }}
+                  title="Conversation History"
+                  className="flex items-center justify-center bg-white border-2 border-[#111111] p-1.5 rounded-lg shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] hover:bg-neutral-50 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer h-9 w-9"
+                >
+                  <History className="h-5 w-5 text-[#111111]" />
+                </button>
+
+                {historyOpen && (
+                  <div className="absolute right-0 mt-3 w-80 bg-white border-2 border-[#111111] p-5 rounded-2xl shadow-[4px_4px_0px_0px_rgba(17,17,17,1)] z-50 space-y-4">
+                    <div className="flex items-center justify-between border-b-2 border-neutral-100 pb-2">
+                      <span className="text-xs font-extrabold uppercase tracking-wider text-[#111111]">
+                        Conversation History
+                      </span>
+                      <span className="text-[9px] text-[#5c5950] font-mono font-bold bg-[#EFDFBB] border border-[#111111] px-1.5 py-0.5 rounded">
+                        {historyList.length} Total
+                      </span>
+                    </div>
+
+                    <style dangerouslySetInnerHTML={{__html: `
+                      .no-scrollbar::-webkit-scrollbar {
+                        display: none;
+                      }
+                    `}} />
+
+                    <div 
+                      className="no-scrollbar space-y-2 max-h-[360px] overflow-y-auto pr-0.5" 
+                      style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+                    >
+                      {historyLoading ? (
+                        <div className="text-[11px] text-neutral-400 text-center py-4 font-bold">Loading history...</div>
+                      ) : historyList.length === 0 ? (
+                        <div className="text-[11px] text-neutral-400 text-center py-4 font-bold">No past conversations found.</div>
+                      ) : (
+                        historyList.map((item: any, idx: number) => {
+                          const dateStr = new Date(item.created_at).toLocaleDateString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit"
+                          });
+                          const isComplete = item.status === "completed";
+                          return (
+                            <button
+                              key={item.id}
+                              onClick={() => {
+                                setHistoryOpen(false);
+                                loadPastInterview(item);
+                              }}
+                              className="w-full text-left bg-[#FAF5EB] hover:bg-[#EFDFBB]/40 border-2 border-[#111111] rounded-xl p-3 transition-all flex flex-col gap-1 relative overflow-hidden shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] hover:shadow-none hover:translate-y-0.5 cursor-pointer"
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-extrabold text-[#111111] truncate max-w-[70%]">
+                                  {item.target_role || `Pivot #${historyList.length - idx}`}
+                                </span>
+                                <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded border border-[#111111] ${
+                                  isComplete 
+                                    ? "bg-emerald-100 text-emerald-800" 
+                                    : "bg-amber-100 text-amber-800"
+                                }`}>
+                                  {isComplete ? "Done" : `Step ${item.current_step}`}
+                                </span>
+                              </div>
+                              <div className="text-[10px] text-neutral-500 flex justify-between items-center mt-1">
+                                <span className="font-medium truncate max-w-[60%]">From: {item.current_role || "Unknown"}</span>
+                                <span className="font-mono text-[9px] font-bold text-neutral-400">{dateStr}</span>
+                              </div>
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
