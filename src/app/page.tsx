@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
+import { useSession, signIn, signOut } from "next-auth/react";
+
 import { 
   TrendingUp, 
   Coins, 
@@ -83,6 +85,8 @@ interface PlanData {
 }
 
 export default function Home() {
+  const { data: session, status } = useSession();
+
   // App states
   const [started, setStarted] = useState(false);
   const [interviewId, setInterviewId] = useState<string | null>(null);
@@ -351,15 +355,47 @@ export default function Home() {
           </div>
         </div>
 
-        {started && (
-          <button 
-            onClick={resetApp} 
-            className="flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-xl border border-[#DCCDA8]/20 text-[#DCCDA8] hover:text-white hover:bg-[#E7B511]/10 hover:border-[#E7B511]/50 transition-all duration-300 shadow-sm"
-          >
-            <RefreshCw className="h-3 w-3 animate-spin-slow" />
-            Restart Audit
-          </button>
-        )}
+        <div className="flex items-center gap-4">
+          {started && (
+            <button 
+              onClick={resetApp} 
+              className="flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-xl border border-[#DCCDA8]/20 text-[#DCCDA8] hover:text-white hover:bg-[#E7B511]/10 hover:border-[#E7B511]/50 transition-all duration-300 shadow-sm"
+            >
+              <RefreshCw className="h-3 w-3 animate-spin-slow" />
+              Restart Audit
+            </button>
+          )}
+
+          {status === "authenticated" ? (
+            <div className="flex items-center gap-2.5 bg-[#12120e] border border-[#DCCDA8]/10 rounded-2xl p-1 pr-3">
+              {session.user?.image ? (
+                <img 
+                  src={session.user.image} 
+                  alt={session.user.name || "User"} 
+                  className="h-7 w-7 rounded-lg object-cover ring-1 ring-[#E7B511]/40"
+                />
+              ) : (
+                <div className="h-7 w-7 rounded-lg bg-[#E7B511] text-[#090907] flex items-center justify-center font-bold text-xs">
+                  {session.user?.name?.[0] || "U"}
+                </div>
+              )}
+              <span className="text-xs text-neutral-300 font-semibold hidden md:inline">{session.user?.name}</span>
+              <button 
+                onClick={() => signOut()}
+                className="text-xs text-neutral-400 hover:text-rose-400 p-1 px-2.5 rounded-lg hover:bg-rose-500/10 transition-colors ml-1"
+              >
+                Sign Out
+              </button>
+            </div>
+          ) : (
+            <button 
+              onClick={() => signIn("google")}
+              className="flex items-center gap-2 text-xs font-bold px-4 py-2.5 rounded-xl bg-gradient-to-tr from-[#E7B511] to-[#DCCDA8] text-[#090907] hover:scale-102 active:scale-98 transition-all duration-200 shadow-md shadow-[#E7B511]/5"
+            >
+              Sign In with Google
+            </button>
+          )}
+        </div>
       </header>
 
       {/* Main Wrapper */}
