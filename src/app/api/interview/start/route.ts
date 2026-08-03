@@ -1,14 +1,22 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { supabaseAdmin } from "@/lib/supabase";
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     const userId = session?.user ? (session.user as { id?: string }).id : null;
     const userName = session?.user?.name || null;
     const hasName = !!userName;
+
+    let forceNew = false;
+    try {
+      const body = await req.json();
+      forceNew = !!body?.forceNew;
+    } catch (e) {
+      // Request might not have a body, which is fine
+    }
 
     // If Supabase is not configured, run in mock mode
     if (!supabaseAdmin) {
@@ -21,7 +29,71 @@ export async function POST() {
       });
     }
 
-    // Create a new interview entry in the database
+    // 1. If there's an existing in-progress session for the authenticated user, resume it
+    if (userId && !forceNew) {
+      const { data: existing, error: findError } = await supabaseAdmin
+        .from("interviews")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("status", "in_progress")
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (findError) {
+        if (!findError.message?.includes("API key") && !findError.message?.includes("JWT") && findError.code !== "PGRST301") {
+          console.error("Error finding existing interview:", findError);
+        }
+      } else if (existing) {
+        // Construct the saved answers object
+        const savedAnswers: Record<string, string> = {
+          name: existing.name || "",
+          currentRole: existing.current_role || "",
+          annualIncome: existing.annual_income || "",
+          savings: existing.savings || "",
+          location: existing.location || "",
+          monthlyExpenses: existing.monthly_expenses || "",
+          timeframe: existing.timeframe || "",
+          targetRole: existing.target_role || "",
+        };
+
+        // Parse adaptive answers if any exist
+        const adaptiveQs = existing.adaptive_questions || [];
+        adaptiveQs.forEach((q: any) => {
+          if (q.id === 8) {
+            savedAnswers.q8Question = q.question || "";
+            savedAnswers.q8Answer = q.answer || "";
+          } else if (q.id === 9) {
+            savedAnswers.q9Question = q.question || "";
+            savedAnswers.q9Answer = q.answer || "";
+          } else if (q.id === 10) {
+            savedAnswers.q10Question = q.question || "";
+            savedAnswers.q10Answer = q.answer || "";
+          }
+        });
+
+        return NextResponse.json({
+          interviewId: existing.id,
+          currentStep: existing.current_step,
+          status: existing.status,
+          userName: userName,
+          answers: savedAnswers,
+          adaptiveQuestions: adaptiveQs,
+          isResumed: true
+        });
+      }
+    }
+
+    // 2. If forcing new, mark any other in-progress interviews as abandoned
+    if (userId && forceNew) {
+      await supabaseAdmin
+        .from("interviews")
+        .update({ status: "abandoned" })
+        .eq("user_id", userId)
+        .eq("status", "in_progress");
+    }
+
+    // 3. Create a new interview entry in the database
     const { data, error } = await supabaseAdmin
       .from("interviews")
       .insert({
