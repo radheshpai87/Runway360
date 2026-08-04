@@ -210,6 +210,50 @@ export default function Home() {
   // Adaptive list from step 8
   const [adaptiveQuestions, setAdaptiveQuestions] = useState<{ id: number; question: string; answer: string | null; type: string }[]>([]);
 
+  // Checklist State tracking completed days per phase
+  const [completedDays, setCompletedDays] = useState<Record<number, Record<number, boolean>>>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("rw360_completed_days");
+        if (saved) return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return { 0: {}, 1: {}, 2: {} };
+  });
+
+  const [activePhaseIndex, setActivePhaseIndex] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("rw360_active_phase");
+        if (saved) return parseInt(saved);
+      } catch (e) {}
+    }
+    return 0;
+  });
+
+  const saveChecklistState = (days: Record<number, Record<number, boolean>>, phase: number) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("rw360_completed_days", JSON.stringify(days));
+      localStorage.setItem("rw360_active_phase", phase.toString());
+    }
+  };
+
+  const toggleDayCompletion = (phase: number, day: number) => {
+    setCompletedDays((prev) => {
+      const phaseDays = prev[phase] ? { ...prev[phase] } : {};
+      phaseDays[day] = !phaseDays[day];
+      const updated = { ...prev, [phase]: phaseDays };
+      saveChecklistState(updated, activePhaseIndex);
+      return updated;
+    });
+  };
+
+  const handleUnlockNextPhase = () => {
+    const nextPhase = activePhaseIndex + 1;
+    setActivePhaseIndex(nextPhase);
+    saveChecklistState(completedDays, nextPhase);
+  };
+
   // Generated Plan State
   const [planData, setPlanData] = useState<PlanData | null>(null);
   const [historyList, setHistoryList] = useState<any[]>([]);
@@ -217,8 +261,8 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<"plan" | "journey" | "runway">("plan");
 
   // Sidebar interactive sandbox state
-  const [sandboxExpenses, setSandboxExpenses] = useState<number>(2500);
-  const [sandboxSavings, setSandboxSavings] = useState<number>(10000);
+  const [sandboxExpenses, setSandboxExpenses] = useState<number>(50000);
+  const [sandboxSavings, setSandboxSavings] = useState<number>(500000);
   const [sandboxTimeline, setSandboxTimeline] = useState<number>(6);
 
   // Chat scroll anchor
@@ -650,38 +694,6 @@ export default function Home() {
                       </div>
                     </div>
 
-                    <div className="space-y-1.5 pt-1">
-                      <div className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">Past Audits</div>
-                      <div 
-                        data-lenis-prevent
-                        className="max-h-36 overflow-y-auto space-y-1 pr-1 border-t border-b border-neutral-100 py-1.5"
-                      >
-                        {historyLoading ? (
-                          <div className="text-[10px] text-neutral-400 text-center py-2">Loading...</div>
-                        ) : historyList.length === 0 ? (
-                          <div className="text-[10px] text-neutral-400 text-center py-2">No audits found</div>
-                        ) : (
-                          historyList.map((item, idx) => (
-                            <button
-                              key={item.id}
-                              onClick={() => loadPastInterview(item)}
-                              className="w-full text-left text-[10px] p-2 hover:bg-[#FAF5EB] rounded-lg border border-[#111111]/10 flex items-center justify-between cursor-pointer transition-all"
-                            >
-                              <span className="truncate max-w-[120px] font-bold text-[#111111]">
-                                {item.target_role || `Pivot #${historyList.length - idx}`}
-                              </span>
-                              <span className={`text-[8px] px-1.5 py-0.5 rounded font-bold ${
-                                item.status === 'completed' 
-                                  ? 'bg-emerald-100 text-emerald-800' 
-                                  : 'bg-amber-100 text-amber-800'
-                              }`}>
-                                {item.status === 'completed' ? 'Completed' : `Step ${item.current_step}`}
-                              </span>
-                            </button>
-                          ))
-                        )}
-                      </div>
-                    </div>
 
                     {started && (
                       <button 
@@ -867,11 +879,11 @@ export default function Home() {
                     <div className="grid grid-cols-2 gap-4 border-t-2 border-neutral-100 pt-3 text-xs">
                       <div>
                         <span className="text-[9px] font-bold text-neutral-400 uppercase">Monthly Spend</span>
-                        <span className="font-extrabold text-neutral-800 block">$2,500/mo</span>
+                        <span className="font-extrabold text-neutral-800 block">₹50,000/mo</span>
                       </div>
                       <div>
                         <span className="text-[9px] font-bold text-neutral-400 uppercase">Buffer Gap</span>
-                        <span className="font-extrabold text-emerald-700 block">$0 (Funded)</span>
+                        <span className="font-extrabold text-emerald-700 block">₹0 (Funded)</span>
                       </div>
                     </div>
                   </div>
@@ -889,7 +901,7 @@ export default function Home() {
               
               <div className="bg-white border-2 border-[#111111] rounded-2xl p-6 shadow-[4px_4px_0px_0px_rgba(17,17,17,1)] space-y-3">
                 <div className="h-8 w-8 rounded bg-[#EFDFBB] border border-[#111111] flex items-center justify-center text-[#111111] font-bold text-sm">
-                  $
+                  ₹
                 </div>
                 <h3 className="font-extrabold text-[#111111] text-base">Runway Calibrator</h3>
                 <p className="text-xs text-[#5c5950] leading-relaxed">
@@ -1112,7 +1124,7 @@ export default function Home() {
                         onClick={() => {
                           const income = (document.getElementById("annualIncomeInput") as HTMLInputElement)?.value || "";
                           const savings = (document.getElementById("savingsInput") as HTMLInputElement)?.value || "";
-                          submitAnswer(`Income: $${income || "0"}, Savings: $${savings || "0"}`, {
+                          submitAnswer(`Income: ₹${income || "0"}, Savings: ₹${savings || "0"}`, {
                             annualIncome: income,
                             savings: savings
                           });
@@ -1135,25 +1147,25 @@ export default function Home() {
                     
                     <div className="space-y-4">
                       <div className="flex justify-between text-xs text-[#5c5950]">
-                        <span>Standard ($500)</span>
+                        <span>Standard (₹10,000)</span>
                         <span className="text-[#111111] font-bold">Slider Tool</span>
-                        <span>High Cost ($10,000)</span>
+                        <span>High Cost (₹2,00,000)</span>
                       </div>
                       <input 
                         type="range" 
-                        min="500" 
-                        max="10000" 
-                        step="100" 
-                        defaultValue="2500"
+                        min="10000" 
+                        max="200000" 
+                        step="5000" 
+                        defaultValue="50000"
                         id="expenseSlider"
                         onChange={(e) => {
                           const ind = document.getElementById("expInd");
-                          if (ind) ind.innerText = `$${parseFloat(e.target.value).toLocaleString()}/mo`;
+                          if (ind) ind.innerText = `₹${parseFloat(e.target.value).toLocaleString('en-IN')}/mo`;
                         }}
                         className="w-full accent-[#111111] h-2 bg-[#EFDFBB] rounded-lg appearance-none cursor-pointer border border-[#111111]"
                       />
                       <div className="text-center text-xl font-extrabold text-[#111111]" id="expInd">
-                        $2,500/mo
+                        ₹50,000/mo
                       </div>
                     </div>
 
@@ -1162,12 +1174,12 @@ export default function Home() {
                         onClick={handleExpensesPrivacy}
                         className="text-xs font-bold px-4 py-2 rounded-xl border-2 border-[#111111] bg-white hover:bg-neutral-50 transition-all"
                       >
-                        Use Default ($2,500/mo)
+                        Use Default (₹50,000/mo)
                       </button>
                       <button 
                         onClick={() => {
-                          const val = (document.getElementById("expenseSlider") as HTMLInputElement)?.value || "2500";
-                          submitAnswer(`$${val}/month`);
+                          const val = (document.getElementById("expenseSlider") as HTMLInputElement)?.value || "50000";
+                          submitAnswer(`₹${val}/month`);
                         }}
                         className="text-xs font-bold px-5 py-2.5 rounded-xl bg-[#E7B511] hover:bg-[#E7B511]/90 text-[#111111] border-2 border-[#111111] shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] active:translate-y-0.5 active:shadow-none transition-all"
                       >
@@ -1290,7 +1302,7 @@ export default function Home() {
                   <div>
                     <span className="block text-neutral-400 uppercase text-[9px] font-bold">Savings Deficit</span>
                     <span className="font-extrabold text-[#111111] text-sm">
-                      {liveShortfall > 0 ? `$${liveShortfall.toLocaleString()}` : "Safe Runway"}
+                      {liveShortfall > 0 ? `₹${liveShortfall.toLocaleString('en-IN')}` : "Safe Runway"}
                     </span>
                   </div>
                 </div>
@@ -1304,13 +1316,13 @@ export default function Home() {
                   <div>
                     <div className="flex justify-between text-neutral-500 mb-1">
                       <span>Total Savings Available</span>
-                      <span className="text-neutral-800 font-bold">${sandboxSavings.toLocaleString()}</span>
+                      <span className="text-neutral-800 font-bold">₹{sandboxSavings.toLocaleString('en-IN')}</span>
                     </div>
                     <input 
                       type="range" 
                       min="0" 
-                      max="50000" 
-                      step="500"
+                      max="2500000" 
+                      step="25000"
                       value={sandboxSavings}
                       onChange={(e) => setSandboxSavings(parseInt(e.target.value))}
                       className="w-full accent-[#111111] h-1.5 bg-[#EFDFBB] rounded-lg appearance-none cursor-pointer border border-[#111111]"
@@ -1320,13 +1332,13 @@ export default function Home() {
                   <div>
                     <div className="flex justify-between text-neutral-500 mb-1">
                       <span>Monthly Expenses</span>
-                      <span className="text-neutral-800 font-bold">${sandboxExpenses.toLocaleString()}/mo</span>
+                      <span className="text-neutral-800 font-bold">₹{sandboxExpenses.toLocaleString('en-IN')}/mo</span>
                     </div>
                     <input 
                       type="range" 
-                      min="500" 
-                      max="10000" 
-                      step="100"
+                      min="5000" 
+                      max="250000" 
+                      step="5000"
                       value={sandboxExpenses}
                       onChange={(e) => setSandboxExpenses(parseInt(e.target.value))}
                       className="w-full accent-[#111111] h-1.5 bg-[#EFDFBB] rounded-lg appearance-none cursor-pointer border border-[#111111]"
@@ -1368,7 +1380,7 @@ export default function Home() {
                 {liveStatus === "underfunded" && (
                   <p className="flex gap-2 items-start text-rose-800">
                     <ShieldAlert className="h-4.5 w-4.5 shrink-0 text-[#B85A38]" />
-                    <span><strong>High Risk Profile:</strong> Emergency runway under 3 months. Postpone your quit date! Aim to save at least $15k or secure bridge income before resigning.</span>
+                    <span><strong>High Risk Profile:</strong> Emergency runway under 3 months. Postpone your quit date! Aim to save at least ₹1.5L or secure bridge income before resigning.</span>
                   </p>
                 )}
               </div>
@@ -1479,99 +1491,251 @@ export default function Home() {
             {activeTab === "plan" && (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 
-                {/* Immediate (30 days) */}
-                <div className="bg-white border-2 border-[#111111] rounded-2xl p-6 lg:p-8 space-y-4 shadow-[4px_4px_0px_0px_rgba(17,17,17,1)]">
-                  <div className="flex items-center gap-2.5 text-[#111111] font-bold text-sm border-b-2 border-neutral-100 pb-4 mb-2">
-                    <span className="h-7 w-7 rounded-lg bg-[#EFDFBB] border border-[#111111] flex items-center justify-center text-xs text-[#111111]">1</span>
-                    Immediate Steps (Next 30 Days)
+                {/* Left Column: Interactive 30-Day Everyday Checklist */}
+                <div className="lg:col-span-2 space-y-6">
+                  {/* Phase Navigation Pills */}
+                  <div className="bg-white border-2 border-[#111111] rounded-2xl p-4 flex flex-wrap gap-3 shadow-[4px_4px_0px_0px_rgba(17,17,17,1)] items-center">
+                    <span className="text-xs font-bold text-[#111111] uppercase tracking-wider mr-2">Phases:</span>
+                    {[
+                      { idx: 0, label: "Days 1–30", name: "Immediate Plan" },
+                      { idx: 1, label: "Days 31–60", name: "Short-Term Goals" },
+                      { idx: 2, label: "Days 61–90", name: "Mid-Term Strategy" },
+                    ].map((phase) => {
+                      const unlocked = phase.idx === 0 || (() => {
+                        const prevPhaseCompletedCount = Object.values(completedDays[phase.idx - 1] || {}).filter(Boolean).length;
+                        return prevPhaseCompletedCount >= 30;
+                      })();
+                      const active = activePhaseIndex === phase.idx;
+                      return (
+                        <button
+                          key={phase.idx}
+                          onClick={() => {
+                            if (unlocked) {
+                              setActivePhaseIndex(phase.idx);
+                              if (typeof window !== "undefined") {
+                                localStorage.setItem("rw360_active_phase", phase.idx.toString());
+                              }
+                            }
+                          }}
+                          disabled={!unlocked}
+                          className={`text-xs font-bold px-3 py-2 rounded-xl border-2 border-[#111111] flex items-center gap-1.5 transition-all cursor-pointer ${
+                            active 
+                              ? "bg-[#E7B511] text-[#111111] shadow-[2px_2px_0px_0px_rgba(17,17,17,1)]" 
+                              : unlocked 
+                                ? "bg-white text-[#111111] hover:bg-neutral-50" 
+                                : "bg-neutral-100 text-neutral-400 border-neutral-300 cursor-not-allowed"
+                          }`}
+                        >
+                          {!unlocked && <Lock className="h-3 w-3" />}
+                          {phase.label}
+                        </button>
+                      );
+                    })}
                   </div>
-                  <ul className="space-y-4">
-                    {planData.plan.immediate.map((item, idx) => (
-                      <li key={idx} className="text-xs text-neutral-700 flex items-start gap-3 leading-relaxed">
-                        <CheckCircle className="h-4 w-4 text-[#4A6B53] shrink-0 mt-0.5" />
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
+
+                  {/* Daily Checklist Tracker Card */}
+                  <div className="bg-white border-2 border-[#111111] rounded-3xl p-6 lg:p-8 space-y-6 shadow-[4px_4px_0px_0px_rgba(17,17,17,1)]">
+                    {/* Header with progress */}
+                    <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 border-b-2 border-neutral-100 pb-5">
+                      <div>
+                        <span className="text-[10px] uppercase font-bold text-neutral-400 tracking-wider">
+                          Active Phase Checklist
+                        </span>
+                        <h3 className="text-xl font-extrabold text-[#111111] mt-0.5">
+                          {activePhaseIndex === 0 && "Phase 1: Foundations (Days 1–30)"}
+                          {activePhaseIndex === 1 && "Phase 2: Execution (Days 31–60)"}
+                          {activePhaseIndex === 2 && "Phase 3: Launch Strategy (Days 61–90)"}
+                        </h3>
+                      </div>
+                      
+                      <div className="flex items-center gap-3 shrink-0">
+                        <div className="text-right">
+                          <span className="text-[10px] font-bold text-neutral-400 block uppercase">Progress</span>
+                          <span className="text-sm font-extrabold text-[#111111]">
+                            {Object.values(completedDays[activePhaseIndex] || {}).filter(Boolean).length} / 30 Days
+                          </span>
+                        </div>
+                        <div className="h-10 w-10 rounded-full border-2 border-[#111111] flex items-center justify-center font-bold text-sm bg-[#FAF5EB]">
+                          {Math.round((Object.values(completedDays[activePhaseIndex] || {}).filter(Boolean).length / 30) * 100)}%
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="w-full bg-[#EFDFBB]/30 h-3 rounded-lg border-2 border-[#111111] overflow-hidden p-0.5">
+                      <div 
+                        className="h-full bg-emerald-500 rounded-md transition-all duration-300" 
+                        style={{ width: `${(Object.values(completedDays[activePhaseIndex] || {}).filter(Boolean).length / 30) * 100}%` }}
+                      ></div>
+                    </div>
+
+                    {/* Checklist Scroll Container */}
+                    <div className="max-h-[500px] overflow-y-auto pr-2 space-y-3" data-lenis-prevent="true" style={{ scrollbarWidth: "thin" }}>
+                      {(() => {
+                        let coreGoals: string[] = [];
+                        if (activePhaseIndex === 0) coreGoals = planData.plan.immediate;
+                        else if (activePhaseIndex === 1) coreGoals = planData.plan.shortTerm;
+                        else coreGoals = planData.plan.midTerm;
+
+                        const tasks: React.ReactNode[] = [];
+                        for (let day = 1; day <= 30; day++) {
+                          const globalDay = activePhaseIndex * 30 + day;
+                          let taskText = "";
+                          if (day === 1) {
+                            taskText = "Define your core objectives and initialize your timeline parameters.";
+                          } else if (day === 30) {
+                            taskText = "Perform a Phase review. Assess budget savings runway and verify goals before unlocking the next phase.";
+                          } else if (day % 7 === 0) {
+                            taskText = "Weekly Review: Assess achievements, update weekly runway metrics, and log feedback.";
+                          } else {
+                            const goalIdx = Math.floor((day - 2) / 9) % Math.max(1, coreGoals.length);
+                            const currentGoal = coreGoals[goalIdx] || "Execute skill plans and test bridge stream parameters.";
+                            if (day % 3 === 0) {
+                              taskText = `Spend 2 hours researching resources, books, or documentation for: "${currentGoal}".`;
+                            } else if (day % 3 === 1) {
+                              taskText = `Practical execution: Write code, draft designs, or build checkpoints towards: "${currentGoal}".`;
+                            } else {
+                              taskText = `Skill development: Work on credential portfolios and complete tutorials for: "${currentGoal}".`;
+                            }
+                          }
+
+                          const isChecked = !!completedDays[activePhaseIndex]?.[day];
+
+                          tasks.push(
+                            <div 
+                              key={day} 
+                              className={`flex items-start gap-3.5 p-3.5 border-2 border-[#111111] rounded-2xl transition-all shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] ${
+                                isChecked 
+                                  ? "bg-emerald-50/50 border-emerald-800/80 shadow-none translate-y-0.5 opacity-75" 
+                                  : "bg-white hover:bg-neutral-50"
+                              }`}
+                            >
+                              <input 
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => toggleDayCompletion(activePhaseIndex, day)}
+                                className="h-5 w-5 border-2 border-[#111111] rounded accent-emerald-600 cursor-pointer mt-0.5 shrink-0"
+                              />
+                              <div className="space-y-0.5">
+                                <span className={`text-[10px] font-extrabold tracking-wider uppercase block ${isChecked ? "text-emerald-700" : "text-neutral-400"}`}>
+                                  Day {globalDay}
+                                </span>
+                                <p className={`text-xs text-neutral-800 leading-relaxed ${isChecked ? "line-through text-neutral-500" : ""}`}>
+                                  {taskText}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        }
+                        return tasks;
+                      })()}
+                    </div>
+
+                    {/* Unlock / Completion Actions */}
+                    {Object.values(completedDays[activePhaseIndex] || {}).filter(Boolean).length >= 30 && activePhaseIndex < 2 && (
+                      <div className="bg-[#FAF5EB] border-2 border-emerald-700 rounded-2xl p-5 text-center space-y-4 animate-fadeIn">
+                        <div className="flex items-center justify-center gap-2 text-emerald-800 font-extrabold text-sm uppercase">
+                          <Unlock className="h-5 w-5" />
+                          Phase Completed!
+                        </div>
+                        <p className="text-xs text-[#5c5950] max-w-md mx-auto leading-relaxed">
+                          Outstanding! You have checked off every single day of this phase. Ready to advance your runway blueprint?
+                        </p>
+                        <button
+                          onClick={handleUnlockNextPhase}
+                          className="bg-[#4A6B53] text-white hover:bg-[#4A6B53]/90 active:translate-y-0.5 font-bold text-xs px-6 py-3 rounded-xl border-2 border-[#111111] shadow-[3px_3px_0px_0px_rgba(17,17,17,1)] active:shadow-none transition-all cursor-pointer inline-flex items-center gap-1.5"
+                        >
+                          Unlock Days {activePhaseIndex === 0 ? "31–60" : "61–90"}
+                          <ArrowRight className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
+                    
+                    {Object.values(completedDays[activePhaseIndex] || {}).filter(Boolean).length >= 30 && activePhaseIndex === 2 && (
+                      <div className="bg-emerald-50 border-2 border-emerald-800/80 rounded-2xl p-5 text-center space-y-2.5 animate-fadeIn">
+                        <div className="text-emerald-800 font-extrabold text-sm uppercase tracking-wide">
+                          🎉 Ultimate Transition Milestone Reached!
+                        </div>
+                        <p className="text-xs text-[#5c5950] max-w-md mx-auto leading-relaxed">
+                          You have fully executed and checked off your 90-day transition timeline. You are ready to safely make your transition!
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                {/* Short term (1-3 months) */}
-                <div className="bg-white border-2 border-[#111111] rounded-2xl p-6 lg:p-8 space-y-4 shadow-[4px_4px_0px_0px_rgba(17,17,17,1)]">
-                  <div className="flex items-center gap-2.5 text-[#111111] font-bold text-sm border-b-2 border-neutral-100 pb-4 mb-2">
-                    <span className="h-7 w-7 rounded-lg bg-[#EFDFBB] border border-[#111111] flex items-center justify-center text-xs text-[#111111]">2</span>
-                    Short-Term Goals (Months 1-3)
-                  </div>
-                  <ul className="space-y-4">
-                    {planData.plan.shortTerm.map((item, idx) => (
-                      <li key={idx} className="text-xs text-neutral-700 flex items-start gap-3 leading-relaxed">
-                        <CheckCircle className="h-4 w-4 text-[#4A6B53] shrink-0 mt-0.5" />
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                {/* Right Column: Core Goals, Safety net & Gigs */}
+                <div className="space-y-6">
+                  {/* Core Goals Card */}
+                  <div className="bg-white border-2 border-[#111111] rounded-2xl p-6 lg:p-8 space-y-4 shadow-[4px_4px_0px_0px_rgba(17,17,17,1)]">
+                    <h3 className="font-bold text-[#111111] text-sm border-b-2 border-neutral-100 pb-3.5 mb-1 flex items-center gap-2">
+                      <Sparkles className="h-4.5 w-4.5 text-[#E7B511]" />
+                      Core Goals of Active Phase
+                    </h3>
+                    <ul className="space-y-4">
+                      {(() => {
+                        let coreGoals: string[] = [];
+                        if (activePhaseIndex === 0) coreGoals = planData.plan.immediate;
+                        else if (activePhaseIndex === 1) coreGoals = planData.plan.shortTerm;
+                        else coreGoals = planData.plan.midTerm;
 
-                {/* Mid term */}
-                <div className="bg-white border-2 border-[#111111] rounded-2xl p-6 lg:p-8 space-y-4 shadow-[4px_4px_0px_0px_rgba(17,17,17,1)]">
-                  <div className="flex items-center gap-2.5 text-[#111111] font-bold text-sm border-b-2 border-neutral-100 pb-4 mb-2">
-                    <span className="h-7 w-7 rounded-lg bg-[#EFDFBB] border border-[#111111] flex items-center justify-center text-xs text-[#111111]">3</span>
-                    Mid-Term Strategy ({answers.timeframe})
+                        return coreGoals.map((item, idx) => (
+                          <li key={idx} className="text-xs text-neutral-700 flex items-start gap-3 leading-relaxed">
+                            <span className="h-5 w-5 rounded bg-[#FAF5EB] border border-[#111111] font-bold text-[10px] text-[#111111] flex items-center justify-center shrink-0 mt-0.5">
+                              {idx + 1}
+                            </span>
+                            <span>{item}</span>
+                          </li>
+                        ));
+                      })()}
+                    </ul>
                   </div>
-                  <ul className="space-y-4">
-                    {planData.plan.midTerm.map((item, idx) => (
-                      <li key={idx} className="text-xs text-neutral-700 flex items-start gap-3 leading-relaxed">
-                        <CheckCircle className="h-4 w-4 text-[#4A6B53] shrink-0 mt-0.5" />
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
 
-                {/* Gigs & Credentials Grid block */}
-                <div className="lg:col-span-2 bg-white border-2 border-[#111111] rounded-2xl p-6 lg:p-8 grid grid-cols-1 md:grid-cols-2 gap-8 shadow-[4px_4px_0px_0px_rgba(17,17,17,1)]">
-                  <div>
-                    <h3 className="font-bold text-[#111111] text-sm border-b-2 border-neutral-100 pb-3 mb-4 flex items-center gap-2">
-                      <Briefcase className="h-4 w-4 text-[#E7B511]" />
-                      Credentials & Portfolios Required
+                  {/* Credentials / Skill building */}
+                  <div className="bg-white border-2 border-[#111111] rounded-2xl p-6 lg:p-8 space-y-4 shadow-[4px_4px_0px_0px_rgba(17,17,17,1)]">
+                    <h3 className="font-bold text-[#111111] text-sm border-b-2 border-neutral-100 pb-3 flex items-center gap-2">
+                      <Briefcase className="h-4.5 w-4.5 text-[#E7B511]" />
+                      Credentials & Portfolios
                     </h3>
                     <ul className="space-y-3">
                       {planData.plan.skillBuilding.map((item, idx) => (
-                        <li key={idx} className="text-xs text-[#5c5950] flex items-start gap-2.5 leading-relaxed">
+                        <li key={idx} className="text-xs text-[#5c5950] flex items-start gap-2 leading-relaxed">
                           <ChevronRight className="h-4 w-4 text-[#111111] shrink-0 mt-0.5" />
-                          {item}
+                          <span>{item}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
 
-                  <div>
-                    <h3 className="font-bold text-[#111111] text-sm border-b-2 border-neutral-100 pb-3 mb-4 flex items-center gap-2">
-                      <Coins className="h-4 w-4 text-[#E7B511]" />
-                      Freelance / Bridge Income Sources
+                  {/* Freelance & Gigs */}
+                  <div className="bg-white border-2 border-[#111111] rounded-2xl p-6 lg:p-8 space-y-4 shadow-[4px_4px_0px_0px_rgba(17,17,17,1)]">
+                    <h3 className="font-bold text-[#111111] text-sm border-b-2 border-neutral-100 pb-3 flex items-center gap-2">
+                      <Coins className="h-4.5 w-4.5 text-[#E7B511]" />
+                      Bridge Income Sources
                     </h3>
                     <ul className="space-y-3">
                       {planData.plan.incomeBridges.map((item, idx) => (
-                        <li key={idx} className="text-xs text-[#5c5950] flex items-start gap-2.5 leading-relaxed">
+                        <li key={idx} className="text-xs text-[#5c5950] flex items-start gap-2 leading-relaxed">
                           <ChevronRight className="h-4 w-4 text-[#111111] shrink-0 mt-0.5" />
-                          {item}
+                          <span>{item}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
-                </div>
 
-                {/* Safety Net Report */}
-                <div className="bg-white border-2 border-[#111111] rounded-2xl p-6 lg:p-8 flex flex-col justify-between shadow-[4px_4px_0px_0px_rgba(17,17,17,1)]">
-                  <div className="space-y-4">
-                    <h3 className="font-bold text-[#111111] text-sm border-b-2 border-neutral-100 pb-3 mb-1">
-                      🛡️ Financial Safety Net Evaluation
-                    </h3>
-                    <p className="text-xs text-[#5c5950] leading-relaxed">
-                      {planData.plan.safetyNet}
-                    </p>
-                  </div>
-                  <div className="mt-6 p-4 bg-[#FAF5EB] rounded-xl border border-[#DCCDA8]/50 text-[10px] text-neutral-500 leading-relaxed">
-                    This evaluation assumes standard 6-month survival thresholds calibrated against local demographic indices in {answers.location}.
+                  {/* Financial Evaluation Report */}
+                  <div className="bg-white border-2 border-[#111111] rounded-2xl p-6 lg:p-8 flex flex-col justify-between shadow-[4px_4px_0px_0px_rgba(17,17,17,1)]">
+                    <div className="space-y-4">
+                      <h3 className="font-bold text-[#111111] text-sm border-b-2 border-neutral-100 pb-3 mb-1">
+                        🛡️ Safety Net Evaluation
+                      </h3>
+                      <p className="text-xs text-[#5c5950] leading-relaxed">
+                        {planData.plan.safetyNet}
+                      </p>
+                    </div>
+                    <div className="mt-6 p-4 bg-[#FAF5EB] rounded-xl border border-[#DCCDA8]/50 text-[10px] text-neutral-500 leading-relaxed">
+                      This evaluation assumes standard 6-month survival thresholds calibrated against local demographic indices in {answers.location || "India"}.
+                    </div>
                   </div>
                 </div>
 
@@ -1666,13 +1830,13 @@ export default function Home() {
                     <div>
                       <div className="flex justify-between text-xs text-neutral-400 mb-1">
                         <span>Total Savings Available</span>
-                        <span className="text-neutral-800 font-bold">${sandboxSavings.toLocaleString()}</span>
+                        <span className="text-neutral-800 font-bold">₹{sandboxSavings.toLocaleString('en-IN')}</span>
                       </div>
                       <input 
                         type="range" 
                         min="0" 
-                        max="50000" 
-                        step="500"
+                        max="2500000" 
+                        step="25000"
                         value={sandboxSavings}
                         onChange={(e) => setSandboxSavings(parseInt(e.target.value))}
                         className="w-full accent-[#111111] h-1.5 bg-[#EFDFBB] rounded-lg appearance-none cursor-pointer border border-[#111111]"
@@ -1682,13 +1846,13 @@ export default function Home() {
                     <div>
                       <div className="flex justify-between text-xs text-neutral-400 mb-1">
                         <span>Average Monthly Cost</span>
-                        <span className="text-neutral-800 font-bold">${sandboxExpenses.toLocaleString()}/mo</span>
+                        <span className="text-neutral-800 font-bold">₹{sandboxExpenses.toLocaleString('en-IN')}/mo</span>
                       </div>
                       <input 
                         type="range" 
-                        min="500" 
-                        max="10000" 
-                        step="100"
+                        min="5000" 
+                        max="250000" 
+                        step="5000"
                         value={sandboxExpenses}
                         onChange={(e) => setSandboxExpenses(parseInt(e.target.value))}
                         className="w-full accent-[#111111] h-1.5 bg-[#EFDFBB] rounded-lg appearance-none cursor-pointer border border-[#111111]"
@@ -1727,14 +1891,14 @@ export default function Home() {
                     <div>
                       <span className="text-xs text-neutral-400 block uppercase font-bold text-[9px]">Standard Emergency Buffer (6m)</span>
                       <div className="text-xl font-bold text-[#111111] mt-1">
-                        ${liveBuffer.toLocaleString()}
+                        ₹{liveBuffer.toLocaleString('en-IN')}
                       </div>
                     </div>
 
                     <div>
                       <span className="text-xs text-neutral-400 block uppercase font-bold text-[9px]">Total Savings Shortfall</span>
                       <div className="text-xl font-bold text-[#B85A38] mt-1">
-                        {liveShortfall > 0 ? `$${liveShortfall.toLocaleString()}` : "$0 (Secure Runway)"}
+                        {liveShortfall > 0 ? `₹${liveShortfall.toLocaleString('en-IN')}` : "₹0 (Secure Runway)"}
                       </div>
                     </div>
                   </div>

@@ -137,32 +137,21 @@ Format your response as a JSON object matching this schema exactly:
       if (nextStep <= 7) {
         nextQuestion = STATIC_QUESTIONS[nextStep];
       } else if (nextStep === 8) {
-        try {
-          const adaptive = await generateAdaptiveQuestions({
-            name: "Candidate",
-            currentRole: "Professional",
-            location: "Worldwide",
-            timeframe: "6 months",
-            targetRole: resolvedAnswer,
-          });
-          return NextResponse.json({
-            interviewId,
-            currentStep: 8,
-            status: "in_progress",
-            nextQuestion: adaptive.practicalQuestion,
-            mockAdaptive: [
-              { id: 8, question: adaptive.practicalQuestion, answer: null, type: "practical" },
-              { id: 9, question: adaptive.psychologicalQuestion, answer: null, type: "psychological" },
-              { id: 10, question: adaptive.wildcardQuestion, answer: null, type: "wildcard" },
-            ]
-          });
-        } catch (err) {
-          nextQuestion = "What practical barriers do you anticipate in this pivot?";
-        }
+        return NextResponse.json({
+          interviewId,
+          currentStep: 8,
+          status: "in_progress",
+          nextQuestion: "What is the first skill or project you want to focus on for this transition?",
+          mockAdaptive: [
+            { id: 8, question: "What is the first skill or project you want to focus on for this transition?", answer: null, type: "practical" },
+            { id: 9, question: "Who is supporting you on this career change journey?", answer: null, type: "psychological" },
+            { id: 10, question: "Do you have a backup plan in case the transition takes longer than expected?", answer: null, type: "wildcard" },
+          ]
+        });
       } else if (nextStep === 9) {
-        nextQuestion = "How do you plan to handle psychological challenges?";
+        nextQuestion = "Who is supporting you on this career change journey?";
       } else if (nextStep === 10) {
-        nextQuestion = "If offered a stable bridge job, would you take it?";
+        nextQuestion = "Do you have a backup plan in case the transition takes longer than expected?";
       } else {
         nextStep = 11;
         nextQuestion = "";
@@ -191,32 +180,21 @@ Format your response as a JSON object matching this schema exactly:
         if (nextStep <= 7) {
           nextQuestion = STATIC_QUESTIONS[nextStep];
         } else if (nextStep === 8) {
-          try {
-            const adaptive = await generateAdaptiveQuestions({
-              name: "Candidate",
-              currentRole: "Professional",
-              location: "Worldwide",
-              timeframe: "6 months",
-              targetRole: resolvedAnswer,
-            });
-            return NextResponse.json({
-              interviewId: "mock-interview-id-" + Date.now(),
-              currentStep: 8,
-              status: "in_progress",
-              nextQuestion: adaptive.practicalQuestion,
-              mockAdaptive: [
-                { id: 8, question: adaptive.practicalQuestion, answer: null, type: "practical" },
-                { id: 9, question: adaptive.psychologicalQuestion, answer: null, type: "psychological" },
-                { id: 10, question: adaptive.wildcardQuestion, answer: null, type: "wildcard" },
-              ]
-            });
-          } catch (err) {
-            nextQuestion = "What practical barriers do you anticipate in this pivot?";
-          }
+          return NextResponse.json({
+            interviewId: "mock-interview-id-" + Date.now(),
+            currentStep: 8,
+            status: "in_progress",
+            nextQuestion: "What is the first skill or project you want to focus on for this transition?",
+            mockAdaptive: [
+              { id: 8, question: "What is the first skill or project you want to focus on for this transition?", answer: null, type: "practical" },
+              { id: 9, question: "Who is supporting you on this career change journey?", answer: null, type: "psychological" },
+              { id: 10, question: "Do you have a backup plan in case the transition takes longer than expected?", answer: null, type: "wildcard" },
+            ]
+          });
         } else if (nextStep === 9) {
-          nextQuestion = "How do you plan to handle psychological challenges?";
+          nextQuestion = "Who is supporting you on this career change journey?";
         } else if (nextStep === 10) {
-          nextQuestion = "If offered a stable bridge job, would you take it?";
+          nextQuestion = "Do you have a backup plan in case the transition takes longer than expected?";
         } else {
           nextStep = 11;
           nextQuestion = "";
@@ -298,33 +276,13 @@ Format your response as a JSON object matching this schema exactly:
         updateData.target_role = resolvedAnswer;
         updateData.current_step = 8;
 
-        // Generate adaptive Q8-Q10 via Gemini using Q1-Q7 answers
-        const name = interview.name || updateData.name;
-        const currentRole = interview.current_role;
-        const location = interview.location;
-        const timeframe = interview.timeframe;
-        const targetRole = resolvedAnswer;
-
-        try {
-          const adaptive = await generateAdaptiveQuestions({
-            name,
-            currentRole,
-            location,
-            timeframe,
-            targetRole,
-          });
-
-          adaptiveQuestionsList = [
-            { id: 8, question: adaptive.practicalQuestion, answer: null, type: "practical" },
-            { id: 9, question: adaptive.psychologicalQuestion, answer: null, type: "psychological" },
-            { id: 10, question: adaptive.wildcardQuestion, answer: null, type: "wildcard" },
-          ];
-          updateData.adaptive_questions = adaptiveQuestionsList;
-          nextQuestion = adaptive.practicalQuestion;
-        } catch (apiErr) {
-          console.error("Failed to generate adaptive questions:", apiErr);
-          return NextResponse.json({ error: "Failed to generate follow-up questions." }, { status: 500 });
-        }
+        adaptiveQuestionsList = [
+          { id: 8, question: "What is the first skill or project you want to focus on for this transition?", answer: null, type: "practical" },
+          { id: 9, question: "Who is supporting you on this career change journey?", answer: null, type: "psychological" },
+          { id: 10, question: "Do you have a backup plan in case the transition takes longer than expected?", answer: null, type: "wildcard" },
+        ];
+        updateData.adaptive_questions = adaptiveQuestionsList;
+        nextQuestion = "What is the first skill or project you want to focus on for this transition?";
         break;
 
       case 8:
