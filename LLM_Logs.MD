@@ -865,4 +865,20 @@ Updated and committed LLM documentation logs:
 1. **Documentation Updates**: Documented our pair-programming session actions (Logs 33–42) in [`LLM_Logs.MD`](file:///home/hari/Runway360/LLM_Logs.MD).
 2. **Git Commit & Push**: Staged all code and documentation changes, committed, rebased remote master branch, and pushed updates to the GitHub remote repository.
 
+---
+
+## Log 43 - 2026-08-07 16:06:08
+
+### User Prompt
+```text
+i want to put a back button in the chatbot page i want to go back to the home page
+```
+
+### LLM Response
+Added a Back button to the header:
+1. **Conditional Render**: Added a Back button conditionally in the navigation header of [`page.tsx`](file:///home/hari/Runway360/src/app/page.tsx) that shows up only when `started` is true (inside the chatbot intake or dashboard).
+2. **Navigation Flow**: Clicking the button sets `started` to false, returning the user to the landing page/home page view.
+3. **Neobrutalist Styling**: Styled the button using the neobrutalist theme (white background, bold border, and drop shadow).
+
+
 
