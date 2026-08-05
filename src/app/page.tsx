@@ -1048,7 +1048,6 @@ export default function Home() {
                   >
                     Restart
                   </button>
-                  <span className="text-[9px] text-[#5c5950] font-mono">ID: {interviewId?.substring(0, 8)}</span>
                 </div>
               </div>
 
