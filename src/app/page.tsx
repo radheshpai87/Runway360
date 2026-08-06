@@ -279,112 +279,20 @@ export default function Home() {
     }
   }, [profileOpen, session]);
 
-  // Reconstruct chat messages list from answers to restore conversation history
-  const reconstructMessages = (
-    savedAnswers: Record<string, string>,
-    currentStep: number,
-    uName: string | null,
-    adaptiveQuestionsList: any[]
-  ) => {
-    const messagesList: Message[] = [];
-    const hasName = !!uName || !!savedAnswers.name;
-
-    // Welcome & Name
-    if (hasName) {
-      messagesList.push({ sender: "bot", text: `Hi ${savedAnswers.name || uName}! Let's design a secure, calculated roadmap for your career transition.` });
-    } else {
-      messagesList.push({ sender: "bot", text: "Welcome to Runway360. Let's design a secure, calculated roadmap for your career transition." });
-      messagesList.push({ sender: "bot", text: "To start: What's your name?" });
+  // Helper to fetch the exact question text for the current step
+  const getCurrentStepQuestion = (stepNum: number, adaptiveQs: any[]) => {
+    if (stepNum === 1) return "To start: What's your name?";
+    if (stepNum === 2) return "First, what is your current career role?";
+    if (stepNum === 3) return "What is your current annual income and total savings (if any)?";
+    if (stepNum === 4) return "Where are you located (city/country)?";
+    if (stepNum === 5) return "What are your average monthly expenses?";
+    if (stepNum === 6) return "How much time do you need to achieve your goal—be specific (e.g., '6 months', '2 years').";
+    if (stepNum === 7) return "What do you want to pursue after quitting? (Optional, but strongly encourage the user to answer—their answer shapes everything that follows.)";
+    if (stepNum >= 8 && stepNum <= 10 && adaptiveQs) {
+      const q = adaptiveQs.find((q: any) => q.id === stepNum);
+      return q ? q.question : "Please answer the follow-up question.";
     }
-
-    if (savedAnswers.name && !hasName) {
-      messagesList.push({ sender: "user", text: savedAnswers.name });
-    }
-
-    // Q2: Current role
-    if (savedAnswers.currentRole) {
-      messagesList.push({ sender: "bot", text: "First, what is your current career role?" });
-      messagesList.push({ sender: "user", text: savedAnswers.currentRole });
-    }
-
-    // Q3: Annual income and savings
-    if (savedAnswers.savings || savedAnswers.annualIncome) {
-      messagesList.push({ sender: "bot", text: "What is your current annual income and total savings (if any)?" });
-      const displayFinancials = savedAnswers.annualIncome && savedAnswers.savings 
-        ? `Annual Income: ${savedAnswers.annualIncome} / Savings: ${savedAnswers.savings}` 
-        : savedAnswers.savings || savedAnswers.annualIncome;
-      messagesList.push({ sender: "user", text: displayFinancials });
-    }
-
-    // Q4: Location
-    if (savedAnswers.location) {
-      messagesList.push({ sender: "bot", text: "Where are you located (city/country)?" });
-      messagesList.push({ sender: "user", text: savedAnswers.location });
-    }
-
-    // Q5: Monthly expenses
-    if (savedAnswers.monthlyExpenses) {
-      messagesList.push({ sender: "bot", text: "What are your average monthly expenses?" });
-      messagesList.push({ sender: "user", text: savedAnswers.monthlyExpenses });
-    }
-
-    // Q6: Timeframe
-    if (savedAnswers.timeframe) {
-      messagesList.push({ sender: "bot", text: "How much time do you need to achieve your goal—be specific (e.g., '6 months', '2 years')." });
-      messagesList.push({ sender: "user", text: savedAnswers.timeframe });
-    }
-
-    // Q7: Target role
-    if (savedAnswers.targetRole) {
-      messagesList.push({ sender: "bot", text: "What do you want to pursue after quitting? (Optional, but strongly encourage the user to answer—their answer shapes everything that follows.)" });
-      messagesList.push({ sender: "user", text: savedAnswers.targetRole });
-    }
-
-    // Adaptive questions (8, 9, 10)
-    if (adaptiveQuestionsList && adaptiveQuestionsList.length > 0) {
-      const q8 = adaptiveQuestionsList.find((q) => q.id === 8);
-      const q9 = adaptiveQuestionsList.find((q) => q.id === 9);
-      const q10 = adaptiveQuestionsList.find((q) => q.id === 10);
-
-      if (q8) {
-        messagesList.push({ sender: "bot", text: q8.question });
-        if (q8.answer) messagesList.push({ sender: "user", text: q8.answer });
-      }
-      if (q9 && currentStep >= 9) {
-        messagesList.push({ sender: "bot", text: q9.question });
-        if (q9.answer) messagesList.push({ sender: "user", text: q9.answer });
-      }
-      if (q10 && currentStep >= 10) {
-        messagesList.push({ sender: "bot", text: q10.question });
-        if (q10.answer) messagesList.push({ sender: "user", text: q10.answer });
-      }
-    }
-
-    // Add next question to be answered
-    if (currentStep === 2 && !savedAnswers.currentRole) {
-      messagesList.push({ sender: "bot", text: "First, what is your current career role?" });
-    } else if (currentStep === 3 && !savedAnswers.savings) {
-      messagesList.push({ sender: "bot", text: "What is your current annual income and total savings (if any)?" });
-    } else if (currentStep === 4 && !savedAnswers.location) {
-      messagesList.push({ sender: "bot", text: "Where are you located (city/country)?" });
-    } else if (currentStep === 5 && !savedAnswers.monthlyExpenses) {
-      messagesList.push({ sender: "bot", text: "What are your average monthly expenses?" });
-    } else if (currentStep === 6 && !savedAnswers.timeframe) {
-      messagesList.push({ sender: "bot", text: "How much time do you need to achieve your goal—be specific (e.g., '6 months', '2 years')." });
-    } else if (currentStep === 7 && !savedAnswers.targetRole) {
-      messagesList.push({ sender: "bot", text: "What do you want to pursue after quitting? (Optional, but strongly encourage the user to answer—their answer shapes everything that follows.)" });
-    } else if (currentStep === 8 && adaptiveQuestionsList.length > 0 && !savedAnswers.q8Answer) {
-      const q = adaptiveQuestionsList.find((q) => q.id === 8);
-      if (q) messagesList.push({ sender: "bot", text: q.question });
-    } else if (currentStep === 9 && adaptiveQuestionsList.length > 1 && !savedAnswers.q9Answer) {
-      const q = adaptiveQuestionsList.find((q) => q.id === 9);
-      if (q) messagesList.push({ sender: "bot", text: q.question });
-    } else if (currentStep === 10 && adaptiveQuestionsList.length > 2 && !savedAnswers.q10Answer) {
-      const q = adaptiveQuestionsList.find((q) => q.id === 10);
-      if (q) messagesList.push({ sender: "bot", text: q.question });
-    }
-
-    return messagesList;
+    return "";
   };
 
   // Load a selected past interview from history
@@ -434,8 +342,11 @@ export default function Home() {
     } else {
       setStep(item.current_step);
       setPlanData(null);
-      const reconstructed = reconstructMessages(savedAnswers, item.current_step, item.name, adaptiveQs);
-      setMessages(reconstructed);
+      const currentQ = getCurrentStepQuestion(item.current_step, adaptiveQs);
+      setMessages([
+        { sender: "bot", text: `Resuming your session at step ${item.current_step}.` },
+        { sender: "bot", text: currentQ }
+      ]);
     }
   };
 
@@ -462,9 +373,11 @@ export default function Home() {
           if (data.adaptiveQuestions) {
             setAdaptiveQuestions(data.adaptiveQuestions);
           }
-          const reconstructed = reconstructMessages(savedAnswers, data.currentStep, data.userName, data.adaptiveQuestions || []);
-          setMessages(reconstructed);
-        } else {
+          const currentQ = getCurrentStepQuestion(data.currentStep, data.adaptiveQuestions || []);
+          setMessages([
+            { sender: "bot", text: `Welcome back! Resuming your session at step ${data.currentStep}.` },
+            { sender: "bot", text: currentQ }
+          ]);
           // Start a fresh session
           setPlanData(null);
           // If Google Auth provides the user's name, skip Step 1
