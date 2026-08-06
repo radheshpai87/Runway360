@@ -619,3 +619,19 @@ I have resolved the tab text visual clashing and grid animation interference:
     *   Styled active tabs with the signature Honey Gold background (`bg-[#E7B511]`), a solid black border, and a neobrutalist offset drop shadow to make selected states feel physical and clear.
     *   Styled inactive tabs as clean, transparent buttons that blend elegantly into the card container.
 3.  **Compilation & GitHub Push:** Built the project with zero errors and pushed the updates to your repository.
+
+---
+
+## Log 27 - 2026-08-06 19:00:13
+
+### User Prompt
+```text
+now i cant seem to scroll with my mouse wheel why is that
+```
+
+### LLM Response
+I have fixed the mouse wheel scrolling issue by resolving the CSS height constraints clashing with the Lenis smooth scroll engine:
+
+1.  **Lenis height: auto Override CSS:** Appended the standard Lenis viewport styles in [`globals.css`](file:///home/radhesh-pai/Projects/Runway360/src/app/globals.css) to force `html` and `body` height to `auto` when the smooth scroll engine is active.
+2.  **HTML/Body Viewport Height Removal:** Modified [`layout.tsx`](file:///home/radhesh-pai/Projects/Runway360/src/app/layout.tsx) to remove `h-full` and `min-h-full flex flex-col` from the `<html>` and `<body>` tags. By removing these constraints, the browser viewport calculates height dynamically and generates native scroll events which Lenis intercepts and smooths out.
+3.  **Compilation & GitHub Push:** Confirmed compilation is successful and pushed the scroll overrides to your repository.
