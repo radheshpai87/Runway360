@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
-import { generateAdaptiveQuestions } from "@/lib/gemini";
+import { generateAdaptiveQuestions } from "@/lib/llm";
 
 // Standard static questions for reference/validation
 const STATIC_QUESTIONS: Record<number, string> = {
