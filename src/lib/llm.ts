@@ -9,7 +9,7 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 // Default Model Choices
 const GROQ_MODEL = "llama-3.3-70b-versatile";
 const MISTRAL_MODEL = "mistral-large-latest";
-const GEMINI_MODEL = "gemini-1.5-flash";
+const GEMINI_MODEL = "gemini-2.0-flash";
 
 // Timeout for HTTP requests in milliseconds
 const REQUEST_TIMEOUT_MS = 8000;
