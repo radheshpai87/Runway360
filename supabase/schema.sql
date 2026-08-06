@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS public.interviews (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
     name TEXT,
-    current_role TEXT,
+    "current_role" TEXT,
     annual_income TEXT,
     savings TEXT,
     location TEXT,
