@@ -750,7 +750,7 @@ export default function Home() {
 
         {/* ACTIVE QUESTIONNAIRE STATE */}
         {started && step <= 10 && (
-          <div className="flex-1 flex flex-col lg:flex-row gap-8 items-stretch w-full">
+          <div className="flex flex-col lg:flex-row gap-8 items-stretch w-full max-w-5xl my-auto self-center justify-center py-4">
             
             {/* Left Column: Chat Console */}
             <div className="flex-1 flex flex-col bg-white border-2 border-[#111111] rounded-3xl overflow-hidden shadow-[6px_6px_0px_0px_rgba(17,17,17,1)] h-[600px] lg:h-[720px]">
