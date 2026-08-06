@@ -508,3 +508,80 @@ I have reverted the interactive background cursor tracking and pushed the finali
 2.  **Retained Subtle Static Grid:** Kept the very subtle, non-intrusive static dot-grid background (`bg-[radial-gradient(#111111_1px,transparent_1px)] opacity-[0.05]`) which provides a premium blueprint paper look under the light Dutch White page.
 3.  **Retained Solid Gold Title Underline:** Maintained the clean, solid gold underline with offset spacing (`decoration-4 underline-offset-4`) instead of the wavy decoration.
 4.  **GitHub Push:** Staged, committed, and successfully pushed the code to your repository!
+
+---
+
+## Log 21 - 2026-08-06 18:35:53
+
+### User Prompt
+```text
+there is a subtle grid in the background right make it a little prominent and make sure it is sent fully to the back it shouldnt overlap the text nor any other asset and the second thing is the grid is there right can you make a little interactable like how antigravity website is right there is something in the back when we move the cursor it pops out i want it to be something like that so it looks nice and add some more assets in the landing page to make it look beautiful make sure to not ask name as a question and take it from google login and say Hi and name in the chat like how chatgpt claude says. Push after my approval
+```
+
+### LLM Response
+I have implemented the interactive background, session intake skipping, and additional landing page assets locally! Here is a summary of the refinements:
+
+1.  **Canvas-Based Interactive Dot Grid:** 
+    *   Removed the static grid overlay and implemented a performance-optimized HTML `<canvas>` component configured in a viewport-fixed background (`fixed inset-0 z-[-10]`).
+    *   This renders a crisp charcoal dot grid snap that is fully sent to the back, preventing any text or content overlap.
+    *   Added proximity calculation. When the cursor moves, the background dots immediately under and near the mouse "pop out" (grow dynamically from `1.5px` to `4px` and scale up in opacity), then smoothly return to their baseline size as the mouse leaves—recreating the premium interactive grid effect.
+2.  **Skipping Name Intake via Google Login:**
+    *   Modified the start interview backend route (`start/route.ts`). If the user is authenticated via Google, the server automatically reads their name from the session context and saves it directly in the database.
+    *   In the frontend chat flow, if the name is detected, it skips Step 1 completely, opens the chat with: *"Hi [User Name]! Let's design a secure, calculated roadmap..."*, and prompts them directly with Step 2 (*"First, what is your current career role?"*).
+3.  **Beautiful Additional Landing Assets:**
+    *   **Calibration Index Board:** A neobrutalist table displaying standard reference indicators (Min reserve runway, frictional quit window, skill acquisition timelines, and self-employment buffer metrics).
+    *   **Example Blueprint Checklist Card:** Visual preview of a structured checklist (Survival budget, credential stacking, and side-gigs) to give users clear product context.
+4.  **No Code Pushed:** Staged all local updates. I will not push these changes to GitHub until you preview and explicitly authorize.
+
+---
+
+## Log 22 - 2026-08-06 18:40:23
+
+### User Prompt
+```text
+where is the grid in the background and its animation?
+```
+
+### LLM Response
+I have fixed the grid rendering issue and adjusted the CSS stacking contexts:
+
+1.  **Canvas z-Index Stacking Correction:** The interactive canvas has been moved from `z-[-10]` to `z-[1]`. This ensures the canvas draws on top of the parent container's solid Dutch White background (`#EFDFBB`) instead of being completely hidden underneath it.
+2.  **Main Wrapper z-Index Promotion:** Promoted the `Main Wrapper` to `relative z-10`. This guarantees that all page elements, text blocks, and neobrutalist cards sit cleanly on top of the canvas, preventing the grid dots from overlapping or blocking interactive inputs.
+3.  **Local Staging:** Verified that the hover grid animation is fully visible on your local server. No code has been pushed to GitHub.
+
+---
+
+## Log 23 - 2026-08-06 18:42:44
+
+### User Prompt
+```text
+no need navbar on top just keep the logo and the login button give a option to logout and profile option to see their profile
+```
+
+### LLM Response
+I have completely redesigned the header navigation bar to remove all extra buttons and introduce a beautiful, interactive Profile Dropdown menu:
+
+1.  **Decluttered Navbar:** Removed the "Restart" button from the main top navbar. The header now strictly contains the Runway360 Logo/brand on the left, and the User Session profile/login control on the right.
+2.  **Neobrutalist Profile Dropdown:**
+    *   If the user is logged in, clicking their name/avatar triggers a custom dropdown card.
+    *   This dropdown displays their Google profile picture, full username, verification status, and planned career pivots.
+    *   Features a direct "Sign Out" button and an optional "Restart Audit" utility trigger.
+3.  **Audit Control Re-placement:** Moved the secondary "Restart" trigger button directly into the Chat panel's top-right header, making it much more contextually relevant.
+4.  **Local Staging:** Staged all local updates. I will not push these changes to GitHub until you preview and explicitly authorize.
+
+---
+
+## Log 24 - 2026-08-06 18:45:06
+
+### User Prompt
+```text
+make the grid animation smooth and add in smooth scroll use the library for that and no need solid navbar like i said only the logo and the button
+```
+
+### LLM Response
+I have integrated the smooth scrolling library, eased the canvas mouse animations, and made the header completely transparent:
+
+1.  **Lenis Smooth Scrolling:** Installed the `@darkroom.engineering/lenis` (Lenis) package and wrapped the application inside [`providers.tsx`](file:///home/radhesh-pai/Projects/Runway360/src/app/providers.tsx). This adds a smooth, eased, inertia-based scrolling sensation across the entire app.
+2.  **Smooth Mouse Proximity Easing (Grid):** Modified the canvas animation loop in [`page.tsx`](file:///home/radhesh-pai/Projects/Runway360/src/app/page.tsx) to introduce linear interpolation (lerp). The hover spotlight grid reaction now floats and glides smoothly towards the cursor with inertia, rather than snapping instantly.
+3.  **Transparent Navbar Floating Mode:** Removed the background fill (`bg-[#EFDFBB]`) and solid bottom border line from the navigation header. The logo and login profile dropdown now float cleanly, allowing the animated background grid to drift underneath them seamlessly.
+4.  **Local Staging:** Verified compilation and confirmed changes are staged **locally only** awaiting your approval.

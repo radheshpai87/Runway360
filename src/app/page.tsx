@@ -88,9 +88,99 @@ interface PlanData {
 
 export default function Home() {
   const { data: session, status } = useSession();
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let animationFrameId: number;
+    let width = (canvas.width = window.innerWidth);
+    let height = (canvas.height = window.innerHeight);
+
+    const spacing = 28; // spacing between dots
+    let dots: Array<{ x: number; y: number; baseRadius: number }> = [];
+
+    const initDots = () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+      dots = [];
+      for (let x = spacing / 2; x < width; x += spacing) {
+        for (let y = spacing / 2; y < height; y += spacing) {
+          dots.push({ x, y, baseRadius: 1.5 });
+        }
+      }
+    };
+
+    initDots();
+
+    let targetMouse = { x: -1000, y: -1000 };
+    let localMouse = { x: -1000, y: -1000 };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      targetMouse.x = e.clientX;
+      targetMouse.y = e.clientY;
+      if (localMouse.x === -1000) {
+        localMouse.x = e.clientX;
+        localMouse.y = e.clientY;
+      }
+    };
+
+    const handleMouseLeave = () => {
+      targetMouse.x = -1000;
+      targetMouse.y = -1000;
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseleave", handleMouseLeave);
+    window.addEventListener("resize", initDots);
+
+    const draw = () => {
+      ctx.clearRect(0, 0, width, height);
+      
+      // Smoothly ease localMouse towards actual targetMouse position
+      localMouse.x += (targetMouse.x - localMouse.x) * 0.08;
+      localMouse.y += (targetMouse.y - localMouse.y) * 0.08;
+
+      dots.forEach((dot) => {
+        const dx = localMouse.x - dot.x;
+        const dy = localMouse.y - dot.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        
+        let radius = dot.baseRadius;
+        let opacity = 0.15; // Prominent grid dots by default
+
+        if (dist < 120) {
+          const factor = (120 - dist) / 120;
+          radius = dot.baseRadius + factor * 2.5; // expand up to 4px
+          opacity = 0.15 + factor * 0.45; // pop out opacity up to 60%
+        }
+
+        ctx.beginPath();
+        ctx.arc(dot.x, dot.y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = "#111111"; // Charcoal Black
+        ctx.globalAlpha = opacity;
+        ctx.fill();
+      });
+
+      animationFrameId = requestAnimationFrame(draw);
+    };
+
+    draw();
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      window.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseleave", handleMouseLeave);
+      window.removeEventListener("resize", initDots);
+    };
+  }, []);
 
   // App states
   const [started, setStarted] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [interviewId, setInterviewId] = useState<string | null>(null);
   const [step, setStep] = useState(1);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -174,12 +264,26 @@ export default function Home() {
       
       if (res.ok) {
         setInterviewId(data.interviewId);
-        setStep(1);
         setStarted(true);
-        setMessages([
-          { sender: "bot", text: "Welcome to Runway360. Let's design a secure, calculated roadmap for your career transition." },
-          { sender: "bot", text: "To start: What's your name?" }
-        ]);
+        
+        // If Google Auth provides the user's name, skip Step 1
+        if (data.userName) {
+          setAnswers((prev) => ({
+            ...prev,
+            name: data.userName,
+          }));
+          setStep(2); // Skip Step 1 (Name intake)
+          setMessages([
+            { sender: "bot", text: `Hi ${data.userName}! Let's design a secure, calculated roadmap for your career transition.` },
+            { sender: "bot", text: "First, what is your current career role?" }
+          ]);
+        } else {
+          setStep(1);
+          setMessages([
+            { sender: "bot", text: "Welcome to Runway360. Let's design a secure, calculated roadmap for your career transition." },
+            { sender: "bot", text: "To start: What's your name?" }
+          ]);
+        }
       } else {
         console.error("Failed to start session:", data.error);
         alert("Failed to initialize session. Make sure your local server is running.");
@@ -342,11 +446,14 @@ export default function Home() {
 
   return (
     <div className="flex flex-col flex-1 bg-[#EFDFBB] text-[#111111] min-h-screen font-sans relative overflow-hidden">
-      {/* Subtle blueprint grid pattern in the background */}
-      <div className="absolute inset-0 bg-[radial-gradient(#111111_1px,transparent_1px)] [background-size:24px_24px] opacity-[0.05] pointer-events-none z-0"></div>
+      {/* Canvas-based Interactive Dot Grid (sent behind content z-[1]) */}
+      <canvas 
+        ref={canvasRef} 
+        className="fixed inset-0 pointer-events-none z-[1]"
+      />
       
       {/* Editorial Navigation Header */}
-      <header className="border-b-2 border-[#111111] bg-[#EFDFBB] sticky top-0 z-50 px-6 py-5 flex items-center justify-between">
+      <header className="sticky top-0 z-50 px-6 py-5 flex items-center justify-between bg-transparent">
         <div className="flex items-center gap-3">
           <div className="h-8 w-8 rounded-lg bg-[#111111] flex items-center justify-center">
             <Compass className="h-4.5 w-4.5 text-[#EFDFBB]" />
@@ -357,40 +464,88 @@ export default function Home() {
         </div>
 
         <div className="flex items-center gap-3">
-          {started && (
-            <button 
-              onClick={resetApp} 
-              className="text-xs font-bold px-4 py-2 border-2 border-[#111111] bg-white hover:bg-neutral-50 active:translate-y-0.5 transition-all shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] active:shadow-none"
-            >
-              Restart
-            </button>
-          )}
-
           {status === "authenticated" ? (
-            <div className="flex items-center gap-2 bg-white border-2 border-[#111111] p-1 pr-3 rounded-lg shadow-[2px_2px_0px_0px_rgba(17,17,17,1)]">
-              {session.user?.image ? (
-                <img 
-                  src={session.user.image} 
-                  alt={session.user.name || "User"} 
-                  className="h-6 w-6 rounded border border-[#111111] object-cover"
-                />
-              ) : (
-                <div className="h-6 w-6 rounded bg-[#E7B511] text-[#111111] flex items-center justify-center font-bold text-xs border border-[#111111]">
-                  {session.user?.name?.[0] || "U"}
+            <div className="relative">
+              <button 
+                onClick={() => setProfileOpen(!profileOpen)}
+                className="flex items-center gap-2 bg-white border-2 border-[#111111] p-1.5 pr-3 rounded-lg shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] hover:bg-neutral-50 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer"
+              >
+                {session.user?.image ? (
+                  <img 
+                    src={session.user.image} 
+                    alt={session.user.name || "User"} 
+                    className="h-6 w-6 rounded border border-[#111111] object-cover"
+                  />
+                ) : (
+                  <div className="h-6 w-6 rounded bg-[#E7B511] text-[#111111] flex items-center justify-center font-bold text-xs border border-[#111111]">
+                    {session.user?.name?.[0] || "U"}
+                  </div>
+                )}
+                <span className="text-xs font-bold text-[#111111]">{session.user?.name}</span>
+              </button>
+
+              {profileOpen && (
+                <div className="absolute right-0 mt-3 w-64 bg-white border-2 border-[#111111] p-5 rounded-2xl shadow-[4px_4px_0px_0px_rgba(17,17,17,1)] z-50 space-y-4">
+                  <div className="flex items-center gap-3 border-b-2 border-neutral-100 pb-3">
+                    {session.user?.image ? (
+                      <img 
+                        src={session.user.image} 
+                        alt={session.user.name || "User"} 
+                        className="h-10 w-10 rounded border-2 border-[#111111] object-cover"
+                      />
+                    ) : (
+                      <div className="h-10 w-10 rounded bg-[#E7B511] text-[#111111] flex items-center justify-center font-bold text-sm border-2 border-[#111111]">
+                        {session.user?.name?.[0] || "U"}
+                      </div>
+                    )}
+                    <div className="overflow-hidden">
+                      <span className="block text-xs font-extrabold text-[#111111] truncate">{session.user?.name}</span>
+                      <span className="block text-[10px] text-neutral-400 truncate">{session.user?.email}</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">Account Profile</div>
+                    <div className="rounded-xl bg-[#FAF5EB] border border-[#111111]/10 p-2.5 text-[11px] text-neutral-700 leading-relaxed space-y-1.5">
+                      <div className="flex justify-between">
+                        <span>Status:</span>
+                        <span className="font-bold text-emerald-700">Google Verified</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Pivots Planned:</span>
+                        <span className="font-bold text-[#111111]">Active</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {started && (
+                    <button 
+                      onClick={() => {
+                        setProfileOpen(false);
+                        resetApp();
+                      }}
+                      className="w-full text-center text-xs font-bold py-2 border-2 border-[#111111] bg-white hover:bg-neutral-50 text-neutral-700 rounded-xl transition-all"
+                    >
+                      Restart Audit
+                    </button>
+                  )}
+
+                  <button 
+                    onClick={() => {
+                      setProfileOpen(false);
+                      signOut();
+                    }}
+                    className="w-full text-center text-xs font-bold py-2 border-2 border-[#111111] bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl transition-all"
+                  >
+                    Sign Out
+                  </button>
                 </div>
               )}
-              <span className="text-xs font-bold text-[#111111] hidden sm:inline">{session.user?.name}</span>
-              <button 
-                onClick={() => signOut()}
-                className="text-[10px] font-bold uppercase tracking-wider text-rose-700 hover:text-rose-900 border-l border-neutral-300 pl-2 ml-1"
-              >
-                Exit
-              </button>
             </div>
           ) : (
             <button 
               onClick={() => signIn("google")}
-              className="text-xs font-bold px-4 py-2 border-2 border-[#111111] bg-[#E7B511] hover:bg-[#E7B511]/90 active:translate-y-0.5 transition-all shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] active:shadow-none"
+              className="text-xs font-bold px-4 py-2 border-2 border-[#111111] bg-[#E7B511] hover:bg-[#E7B511]/90 active:translate-y-0.5 transition-all shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] active:shadow-none cursor-pointer"
             >
               Sign In with Google
             </button>
@@ -399,7 +554,7 @@ export default function Home() {
       </header>
 
       {/* Main Wrapper */}
-      <div className="flex flex-1 flex-col lg:flex-row max-w-6xl w-full mx-auto p-4 lg:p-8 gap-8 items-stretch justify-center">
+      <div className="flex flex-1 flex-col lg:flex-row max-w-6xl w-full mx-auto p-4 lg:p-8 gap-8 items-stretch justify-center relative z-10">
         
         {/* LANDING MARKETING PAGE STATE */}
         {!started && (
@@ -516,6 +671,80 @@ export default function Home() {
 
             </div>
 
+            {/* Additional Landing Page Assets: Transition Checklist Preview & Index */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+              
+              {/* Transition Metrics Index */}
+              <div className="lg:col-span-5 bg-white border-2 border-[#111111] rounded-2xl p-6 shadow-[4px_4px_0px_0px_rgba(17,17,17,1)] flex flex-col justify-between space-y-6">
+                <div>
+                  <h3 className="font-extrabold text-[#111111] text-lg uppercase tracking-wider flex items-center gap-2">
+                    <Activity className="h-5 w-5 text-[#E7B511]" />
+                    Calibration Index
+                  </h3>
+                  <p className="text-xs text-[#5c5950] mt-1">Recommended baseline metrics for Gen Z transition readiness.</p>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center border-b border-neutral-100 pb-2.5">
+                    <span className="text-xs text-[#5c5950] font-semibold">Min Reserve Runway</span>
+                    <span className="text-xs font-bold bg-[#EFDFBB] border border-[#111111] px-2 py-0.5 rounded">6.0 Months</span>
+                  </div>
+                  <div className="flex justify-between items-center border-b border-neutral-100 pb-2.5">
+                    <span className="text-xs text-[#5c5950] font-semibold">Frictional Quit Window</span>
+                    <span className="text-xs font-bold bg-[#EFDFBB] border border-[#111111] px-2 py-0.5 rounded">180 Days</span>
+                  </div>
+                  <div className="flex justify-between items-center border-b border-neutral-100 pb-2.5">
+                    <span className="text-xs text-[#5c5950] font-semibold">Typical Skill Acquisition Cap</span>
+                    <span className="text-xs font-bold bg-[#EFDFBB] border border-[#111111] px-2 py-0.5 rounded">90 Days</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-[#5c5950] font-semibold">Self-Employment Buffer Rate</span>
+                    <span className="text-xs font-bold bg-[#E7B511] border border-[#111111] px-2 py-0.5 rounded">+15% Savings</span>
+                  </div>
+                </div>
+
+                <div className="text-[10px] text-neutral-400 leading-relaxed border-t border-neutral-100 pt-3">
+                  *Index values are derived from standard demographic averages and cost-of-living adjustments across municipal centers.
+                </div>
+              </div>
+
+              {/* Checklist Blueprint Preview */}
+              <div className="lg:col-span-7 bg-white border-2 border-[#111111] rounded-2xl p-6 shadow-[4px_4px_0px_0px_rgba(17,17,17,1)] space-y-5">
+                <div>
+                  <h3 className="font-extrabold text-[#111111] text-lg uppercase tracking-wider flex items-center gap-2">
+                    <Layers className="h-5 w-5 text-[#E7B511]" />
+                    Example Blueprint Checklist
+                  </h3>
+                  <p className="text-xs text-[#5c5950] mt-1">A glimpse of the visual phased task maps generated at checkout.</p>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex gap-3 items-start border border-[#111111]/10 bg-[#FAF5EB]/40 p-3 rounded-xl">
+                    <span className="h-4.5 w-4.5 rounded-full bg-[#EFDFBB] border border-[#111111] text-[9px] font-bold flex items-center justify-center text-[#111111] shrink-0 mt-0.5">1</span>
+                    <div className="space-y-0.5">
+                      <span className="text-xs font-bold text-[#111111] block">Establish Cash Cost Survival Budget</span>
+                      <span className="text-[10px] text-[#5c5950] block">Reduce auxiliary costs to create the absolute bare minimum reserve.</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-3 items-start border border-[#111111]/10 bg-[#FAF5EB]/40 p-3 rounded-xl">
+                    <span className="h-4.5 w-4.5 rounded-full bg-[#EFDFBB] border border-[#111111] text-[9px] font-bold flex items-center justify-center text-[#111111] shrink-0 mt-0.5">2</span>
+                    <div className="space-y-0.5">
+                      <span className="text-xs font-bold text-[#111111] block">Acquire Core Skill Credentials</span>
+                      <span className="text-[10px] text-[#5c5950] block">Commit to 1-3 certifications or specialized public portfolio builds.</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-3 items-start border border-[#111111]/10 bg-[#FAF5EB]/40 p-3 rounded-xl">
+                    <span className="h-4.5 w-4.5 rounded-full bg-[#EFDFBB] border border-[#111111] text-[9px] font-bold flex items-center justify-center text-[#111111] shrink-0 mt-0.5">3</span>
+                    <div className="space-y-0.5">
+                      <span className="text-xs font-bold text-[#111111] block">Secure Bridge Income & Freelance Gig</span>
+                      <span className="text-[10px] text-[#5c5950] block">Secure a 10-15 hour bridge gig weekly before officially quitting.</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
           </div>
         )}
 
@@ -532,7 +761,15 @@ export default function Home() {
                   <div className="h-2 w-2 rounded-full bg-[#E7B511]"></div>
                   <span className="text-xs font-bold uppercase tracking-wider text-[#111111]">Audit Phase ({step}/10)</span>
                 </div>
-                <span className="text-[9px] text-[#5c5950] font-mono">ID: {interviewId?.substring(0, 8)}</span>
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={resetApp}
+                    className="text-[10px] font-bold px-3 py-1 border-2 border-[#111111] bg-white hover:bg-neutral-50 active:translate-y-0.5 rounded transition-all shadow-[1px_1px_0px_0px_rgba(17,17,17,1)] active:shadow-none cursor-pointer"
+                  >
+                    Restart
+                  </button>
+                  <span className="text-[9px] text-[#5c5950] font-mono">ID: {interviewId?.substring(0, 8)}</span>
+                </div>
               </div>
 
               {/* Message List */}
