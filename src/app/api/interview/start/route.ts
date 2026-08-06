@@ -7,23 +7,27 @@ export async function POST() {
   try {
     const session = await getServerSession(authOptions);
     const userId = session?.user ? (session.user as { id?: string }).id : null;
+    const userName = session?.user?.name || null;
+    const hasName = !!userName;
 
     // If Supabase is not configured, run in mock mode
     if (!supabaseAdmin) {
       return NextResponse.json({
         interviewId: "mock-interview-id-" + Date.now(),
-        currentStep: 1,
+        currentStep: hasName ? 2 : 1,
         status: "in_progress",
-        isMock: true
+        isMock: true,
+        userName: userName
       });
     }
 
-    // Create a new blank interview entry in the database
+    // Create a new interview entry in the database
     const { data, error } = await supabaseAdmin
       .from("interviews")
       .insert({
         user_id: userId,
-        current_step: 1,
+        name: userName,
+        current_step: hasName ? 2 : 1,
         status: "in_progress",
         adaptive_questions: [],
       })
@@ -36,9 +40,10 @@ export async function POST() {
         console.warn("⚠️ Fallback: Invalid Supabase API keys. Swapping to Mock Session.");
         return NextResponse.json({
           interviewId: "mock-interview-id-" + Date.now(),
-          currentStep: 1,
+          currentStep: hasName ? 2 : 1,
           status: "in_progress",
           isMock: true,
+          userName: userName,
           warning: "Invalid Supabase API key. Running in Mock Mode."
         });
       }
@@ -49,6 +54,7 @@ export async function POST() {
       interviewId: data.id,
       currentStep: data.current_step,
       status: data.status,
+      userName: userName
     });
   } catch (error) {
     console.error("Server error starting interview:", error);
