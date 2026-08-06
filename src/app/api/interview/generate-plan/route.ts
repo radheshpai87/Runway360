@@ -59,6 +59,43 @@ export async function POST(req: NextRequest) {
 
     if (fetchError || !interview) {
       console.error("Error fetching interview for plan generation:", fetchError);
+      if (fetchError?.message?.includes("API key") || fetchError?.message?.includes("JWT") || fetchError?.code === "PGRST301") {
+        console.warn("⚠️ Fallback: Invalid Supabase API keys on generate-plan. Swapping to Mock Plan.");
+        const mockAnswers = body.answers || {};
+        const financialMetrics = calculateFinancialMetrics(
+          mockAnswers.savings || "10000",
+          mockAnswers.annualIncome || "50000",
+          mockAnswers.monthlyExpenses || "20000",
+          mockAnswers.timeframe || "6 months"
+        );
+
+        const result = await generateTransitionPlanAndJourneyMap(
+          {
+            name: mockAnswers.name || "Pivot Candidate",
+            currentRole: mockAnswers.currentRole || "Professional",
+            annualIncome: mockAnswers.annualIncome || "50000",
+            savings: mockAnswers.savings || "10000",
+            location: mockAnswers.location || "Worldwide",
+            monthlyExpenses: mockAnswers.monthlyExpenses || "20000",
+            timeframe: mockAnswers.timeframe || "6 months",
+            targetRole: mockAnswers.targetRole || "Creative Pivot",
+            answers: {
+              q8: { question: mockAnswers.q8Question || "Skill gaps", answer: mockAnswers.q8Answer || "Learning every day" },
+              q9: { question: mockAnswers.q9Question || "Self doubt", answer: mockAnswers.q9Answer || "Supportive friends" },
+              q10: { question: mockAnswers.q10Question || "Wildcard", answer: mockAnswers.q10Answer || "Yes, I will take it" },
+            },
+          },
+          financialMetrics
+        );
+
+        return NextResponse.json({
+          planId: "mock-plan-id-" + Date.now(),
+          financialMetrics,
+          plan: result.plan,
+          journey: result.journey,
+          isMock: true
+        });
+      }
       return NextResponse.json({ error: "Interview session not found." }, { status: 404 });
     }
 
