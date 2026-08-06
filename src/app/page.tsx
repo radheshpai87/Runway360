@@ -210,6 +210,8 @@ export default function Home() {
 
   // Generated Plan State
   const [planData, setPlanData] = useState<PlanData | null>(null);
+  const [historyList, setHistoryList] = useState<any[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"plan" | "journey" | "runway">("plan");
 
   // Sidebar interactive sandbox state
@@ -255,34 +257,262 @@ export default function Home() {
   const liveDeficit = Math.max(0, sandboxTimeline - liveRunway);
   const liveStatus = liveRunway >= 6 ? "safe" : liveRunway >= 3 ? "moderate" : "underfunded";
 
+  // Fetch history list when profile is opened
+  const fetchHistory = async () => {
+    setHistoryLoading(true);
+    try {
+      const res = await fetch("/api/interview/history");
+      const data = await res.json();
+      if (res.ok && data.interviews) {
+        setHistoryList(data.interviews);
+      }
+    } catch (e) {
+      console.error("Error loading interview history:", e);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (profileOpen && session) {
+      fetchHistory();
+    }
+  }, [profileOpen, session]);
+
+  // Reconstruct chat messages list from answers to restore conversation history
+  const reconstructMessages = (
+    savedAnswers: Record<string, string>,
+    currentStep: number,
+    uName: string | null,
+    adaptiveQuestionsList: any[]
+  ) => {
+    const messagesList: Message[] = [];
+    const hasName = !!uName || !!savedAnswers.name;
+
+    // Welcome & Name
+    if (hasName) {
+      messagesList.push({ sender: "bot", text: `Hi ${savedAnswers.name || uName}! Let's design a secure, calculated roadmap for your career transition.` });
+    } else {
+      messagesList.push({ sender: "bot", text: "Welcome to Runway360. Let's design a secure, calculated roadmap for your career transition." });
+      messagesList.push({ sender: "bot", text: "To start: What's your name?" });
+    }
+
+    if (savedAnswers.name && !hasName) {
+      messagesList.push({ sender: "user", text: savedAnswers.name });
+    }
+
+    // Q2: Current role
+    if (savedAnswers.currentRole) {
+      messagesList.push({ sender: "bot", text: "First, what is your current career role?" });
+      messagesList.push({ sender: "user", text: savedAnswers.currentRole });
+    }
+
+    // Q3: Annual income and savings
+    if (savedAnswers.savings || savedAnswers.annualIncome) {
+      messagesList.push({ sender: "bot", text: "What is your current annual income and total savings (if any)?" });
+      const displayFinancials = savedAnswers.annualIncome && savedAnswers.savings 
+        ? `Annual Income: ${savedAnswers.annualIncome} / Savings: ${savedAnswers.savings}` 
+        : savedAnswers.savings || savedAnswers.annualIncome;
+      messagesList.push({ sender: "user", text: displayFinancials });
+    }
+
+    // Q4: Location
+    if (savedAnswers.location) {
+      messagesList.push({ sender: "bot", text: "Where are you located (city/country)?" });
+      messagesList.push({ sender: "user", text: savedAnswers.location });
+    }
+
+    // Q5: Monthly expenses
+    if (savedAnswers.monthlyExpenses) {
+      messagesList.push({ sender: "bot", text: "What are your average monthly expenses?" });
+      messagesList.push({ sender: "user", text: savedAnswers.monthlyExpenses });
+    }
+
+    // Q6: Timeframe
+    if (savedAnswers.timeframe) {
+      messagesList.push({ sender: "bot", text: "How much time do you need to achieve your goal—be specific (e.g., '6 months', '2 years')." });
+      messagesList.push({ sender: "user", text: savedAnswers.timeframe });
+    }
+
+    // Q7: Target role
+    if (savedAnswers.targetRole) {
+      messagesList.push({ sender: "bot", text: "What do you want to pursue after quitting? (Optional, but strongly encourage the user to answer—their answer shapes everything that follows.)" });
+      messagesList.push({ sender: "user", text: savedAnswers.targetRole });
+    }
+
+    // Adaptive questions (8, 9, 10)
+    if (adaptiveQuestionsList && adaptiveQuestionsList.length > 0) {
+      const q8 = adaptiveQuestionsList.find((q) => q.id === 8);
+      const q9 = adaptiveQuestionsList.find((q) => q.id === 9);
+      const q10 = adaptiveQuestionsList.find((q) => q.id === 10);
+
+      if (q8) {
+        messagesList.push({ sender: "bot", text: q8.question });
+        if (q8.answer) messagesList.push({ sender: "user", text: q8.answer });
+      }
+      if (q9 && currentStep >= 9) {
+        messagesList.push({ sender: "bot", text: q9.question });
+        if (q9.answer) messagesList.push({ sender: "user", text: q9.answer });
+      }
+      if (q10 && currentStep >= 10) {
+        messagesList.push({ sender: "bot", text: q10.question });
+        if (q10.answer) messagesList.push({ sender: "user", text: q10.answer });
+      }
+    }
+
+    // Add next question to be answered
+    if (currentStep === 2 && !savedAnswers.currentRole) {
+      messagesList.push({ sender: "bot", text: "First, what is your current career role?" });
+    } else if (currentStep === 3 && !savedAnswers.savings) {
+      messagesList.push({ sender: "bot", text: "What is your current annual income and total savings (if any)?" });
+    } else if (currentStep === 4 && !savedAnswers.location) {
+      messagesList.push({ sender: "bot", text: "Where are you located (city/country)?" });
+    } else if (currentStep === 5 && !savedAnswers.monthlyExpenses) {
+      messagesList.push({ sender: "bot", text: "What are your average monthly expenses?" });
+    } else if (currentStep === 6 && !savedAnswers.timeframe) {
+      messagesList.push({ sender: "bot", text: "How much time do you need to achieve your goal—be specific (e.g., '6 months', '2 years')." });
+    } else if (currentStep === 7 && !savedAnswers.targetRole) {
+      messagesList.push({ sender: "bot", text: "What do you want to pursue after quitting? (Optional, but strongly encourage the user to answer—their answer shapes everything that follows.)" });
+    } else if (currentStep === 8 && adaptiveQuestionsList.length > 0 && !savedAnswers.q8Answer) {
+      const q = adaptiveQuestionsList.find((q) => q.id === 8);
+      if (q) messagesList.push({ sender: "bot", text: q.question });
+    } else if (currentStep === 9 && adaptiveQuestionsList.length > 1 && !savedAnswers.q9Answer) {
+      const q = adaptiveQuestionsList.find((q) => q.id === 9);
+      if (q) messagesList.push({ sender: "bot", text: q.question });
+    } else if (currentStep === 10 && adaptiveQuestionsList.length > 2 && !savedAnswers.q10Answer) {
+      const q = adaptiveQuestionsList.find((q) => q.id === 10);
+      if (q) messagesList.push({ sender: "bot", text: q.question });
+    }
+
+    return messagesList;
+  };
+
+  // Load a selected past interview from history
+  const loadPastInterview = (item: any) => {
+    setInterviewId(item.id);
+    setStarted(true);
+    setProfileOpen(false);
+
+    const savedAnswers = {
+      name: item.name || "",
+      currentRole: item.current_role || "",
+      annualIncome: item.annual_income || "",
+      savings: item.savings || "",
+      location: item.location || "",
+      monthlyExpenses: item.monthly_expenses || "",
+      timeframe: item.timeframe || "",
+      targetRole: item.target_role || "",
+      q8Question: "",
+      q8Answer: "",
+      q9Question: "",
+      q9Answer: "",
+      q10Question: "",
+      q10Answer: "",
+    };
+
+    const adaptiveQs = item.adaptive_questions || [];
+    setAdaptiveQuestions(adaptiveQs);
+
+    adaptiveQs.forEach((q: any) => {
+      if (q.id === 8) {
+        savedAnswers.q8Question = q.question || "";
+        savedAnswers.q8Answer = q.answer || "";
+      } else if (q.id === 9) {
+        savedAnswers.q9Question = q.question || "";
+        savedAnswers.q9Answer = q.answer || "";
+      } else if (q.id === 10) {
+        savedAnswers.q10Question = q.question || "";
+        savedAnswers.q10Answer = q.answer || "";
+      }
+    });
+
+    setAnswers(savedAnswers);
+
+    if (item.status === "completed" && item.plan) {
+      setPlanData(item.plan);
+      setStep(12); // Directly jump to dashboard
+    } else {
+      setStep(item.current_step);
+      setPlanData(null);
+      const reconstructed = reconstructMessages(savedAnswers, item.current_step, item.name, adaptiveQs);
+      setMessages(reconstructed);
+    }
+  };
+
   // Start the interview session
-  const startInterview = async () => {
+  const startInterview = async (forceNewSession = false) => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/interview/start", { method: "POST" });
+      const res = await fetch("/api/interview/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ forceNew: forceNewSession })
+      });
       const data = await res.json();
       
       if (res.ok) {
         setInterviewId(data.interviewId);
         setStarted(true);
         
-        // If Google Auth provides the user's name, skip Step 1
-        if (data.userName) {
-          setAnswers((prev) => ({
-            ...prev,
-            name: data.userName,
-          }));
-          setStep(2); // Skip Step 1 (Name intake)
-          setMessages([
-            { sender: "bot", text: `Hi ${data.userName}! Let's design a secure, calculated roadmap for your career transition.` },
-            { sender: "bot", text: "First, what is your current career role?" }
-          ]);
+        if (data.isResumed) {
+          // Resume saved session state
+          const savedAnswers = data.answers;
+          setAnswers(savedAnswers);
+          setStep(data.currentStep);
+          if (data.adaptiveQuestions) {
+            setAdaptiveQuestions(data.adaptiveQuestions);
+          }
+          const reconstructed = reconstructMessages(savedAnswers, data.currentStep, data.userName, data.adaptiveQuestions || []);
+          setMessages(reconstructed);
         } else {
-          setStep(1);
-          setMessages([
-            { sender: "bot", text: "Welcome to Runway360. Let's design a secure, calculated roadmap for your career transition." },
-            { sender: "bot", text: "To start: What's your name?" }
-          ]);
+          // Start a fresh session
+          setPlanData(null);
+          // If Google Auth provides the user's name, skip Step 1
+          if (data.userName) {
+            setAnswers({
+              name: data.userName,
+              currentRole: "",
+              annualIncome: "",
+              savings: "",
+              location: "",
+              monthlyExpenses: "",
+              timeframe: "",
+              targetRole: "",
+              q8Question: "",
+              q8Answer: "",
+              q9Question: "",
+              q9Answer: "",
+              q10Question: "",
+              q10Answer: "",
+            });
+            setStep(2); // Skip Step 1 (Name intake)
+            setMessages([
+              { sender: "bot", text: `Hi ${data.userName}! Let's design a secure, calculated roadmap for your career transition.` },
+              { sender: "bot", text: "First, what is your current career role?" }
+            ]);
+          } else {
+            setAnswers({
+              name: "",
+              currentRole: "",
+              annualIncome: "",
+              savings: "",
+              location: "",
+              monthlyExpenses: "",
+              timeframe: "",
+              targetRole: "",
+              q8Question: "",
+              q8Answer: "",
+              q9Question: "",
+              q9Answer: "",
+              q10Question: "",
+              q10Answer: "",
+            });
+            setStep(1);
+            setMessages([
+              { sender: "bot", text: "Welcome to Runway360. Let's design a secure, calculated roadmap for your career transition." },
+              { sender: "bot", text: "To start: What's your name?" }
+            ]);
+          }
         }
       } else {
         console.error("Failed to start session:", data.error);
@@ -421,27 +651,7 @@ export default function Home() {
 
   // Reset interview
   const resetApp = () => {
-    setStarted(false);
-    setInterviewId(null);
-    setStep(1);
-    setMessages([]);
-    setPlanData(null);
-    setAnswers({
-      name: "",
-      currentRole: "",
-      annualIncome: "",
-      savings: "",
-      location: "",
-      monthlyExpenses: "",
-      timeframe: "",
-      targetRole: "",
-      q8Question: "",
-      q8Answer: "",
-      q9Question: "",
-      q9Answer: "",
-      q10Question: "",
-      q10Answer: "",
-    });
+    startInterview(true);
   };
 
   return (
@@ -513,8 +723,38 @@ export default function Home() {
                       </div>
                       <div className="flex justify-between">
                         <span>Pivots Planned:</span>
-                        <span className="font-bold text-[#111111]">Active</span>
+                        <span className="font-bold text-[#111111]">{historyList.length || 0} Total</span>
                       </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5 pt-1">
+                    <div className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">Past Audits</div>
+                    <div className="max-h-36 overflow-y-auto space-y-1 pr-1 border-t border-b border-neutral-100 py-1.5">
+                      {historyLoading ? (
+                        <div className="text-[10px] text-neutral-400 text-center py-2">Loading...</div>
+                      ) : historyList.length === 0 ? (
+                        <div className="text-[10px] text-neutral-400 text-center py-2">No audits found</div>
+                      ) : (
+                        historyList.map((item, idx) => (
+                          <button
+                            key={item.id}
+                            onClick={() => loadPastInterview(item)}
+                            className="w-full text-left text-[10px] p-2 hover:bg-[#FAF5EB] rounded-lg border border-[#111111]/10 flex items-center justify-between cursor-pointer transition-all"
+                          >
+                            <span className="truncate max-w-[120px] font-bold text-[#111111]">
+                              {item.target_role || `Pivot #${historyList.length - idx}`}
+                            </span>
+                            <span className={`text-[8px] px-1.5 py-0.5 rounded font-bold ${
+                              item.status === 'completed' 
+                                ? 'bg-emerald-100 text-emerald-800' 
+                                : 'bg-amber-100 text-amber-800'
+                            }`}>
+                              {item.status === 'completed' ? 'Completed' : `Step ${item.current_step}`}
+                            </span>
+                          </button>
+                        ))
+                      )}
                     </div>
                   </div>
 
