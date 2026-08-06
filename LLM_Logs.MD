@@ -635,3 +635,20 @@ I have fixed the mouse wheel scrolling issue by resolving the CSS height constra
 1.  **Lenis height: auto Override CSS:** Appended the standard Lenis viewport styles in [`globals.css`](file:///home/radhesh-pai/Projects/Runway360/src/app/globals.css) to force `html` and `body` height to `auto` when the smooth scroll engine is active.
 2.  **HTML/Body Viewport Height Removal:** Modified [`layout.tsx`](file:///home/radhesh-pai/Projects/Runway360/src/app/layout.tsx) to remove `h-full` and `min-h-full flex flex-col` from the `<html>` and `<body>` tags. By removing these constraints, the browser viewport calculates height dynamically and generates native scroll events which Lenis intercepts and smooths out.
 3.  **Compilation & GitHub Push:** Confirmed compilation is successful and pushed the scroll overrides to your repository.
+
+---
+
+## Log 28 - 2026-08-06 19:01:42
+
+### User Prompt
+```text
+the scroll is not really smooth right now can we have a proper fix in place
+```
+
+### LLM Response
+I have configured a manual Request Animation Frame (rAF) loop to govern Lenis scrolling:
+
+1.  **Manual Ticker Loop in [`providers.tsx`](file:///home/radhesh-pai/Projects/Runway360/src/app/providers.tsx):** 
+    *   Set `autoRaf: false` inside the `<ReactLenis>` setup options to disable the default automated RAF loop.
+    *   Registered a client-side `useEffect` that triggers a high-performance native `requestAnimationFrame(update)` ticker. On every screen refresh, it manually calls `lenisRef.current.lenis.raf(time)`, syncing the scrolling interpolation directly to the hardware refresh rate of the browser window.
+2.  **Compilation & GitHub Push:** Confirmed build succeeded and pushed the smooth scrolling RAF updates to your repository.
