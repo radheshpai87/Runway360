@@ -105,7 +105,7 @@ export default function Home() {
   });
 
   // Adaptive list from step 8
-  const [adaptiveQuestions, setAdaptiveQuestions] = useState<any[]>([]);
+  const [adaptiveQuestions, setAdaptiveQuestions] = useState<{ id: number; question: string; answer: string | null; type: string }[]>([]);
 
   // Generated Plan State
   const [planData, setPlanData] = useState<PlanData | null>(null);
@@ -123,6 +123,16 @@ export default function Home() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
+  // Helper: Convert timeline string to months
+  function parseTimelineToMonths(timeline: string): number {
+    const clean = timeline.toLowerCase();
+    const match = clean.match(/(\d+)/);
+    if (!match) return 6;
+    const num = parseInt(match[1]);
+    if (clean.includes("year") || clean.includes("yr")) return num * 12;
+    return num;
+  }
+
   // Synchronize sandbox inputs when answers are submitted
   useEffect(() => {
     if (answers.monthlyExpenses && !isNaN(parseFloat(answers.monthlyExpenses))) {
@@ -136,16 +146,6 @@ export default function Home() {
       setSandboxTimeline(months);
     }
   }, [answers.monthlyExpenses, answers.savings, answers.timeframe]);
-
-  // Helper: Convert timeline string to months
-  function parseTimelineToMonths(timeline: string): number {
-    const clean = timeline.toLowerCase();
-    const match = clean.match(/(\d+)/);
-    if (!match) return 6;
-    const num = parseInt(match[1]);
-    if (clean.includes("year") || clean.includes("yr")) return num * 12;
-    return num;
-  }
 
   // Calculate live runway metrics in frontend for the sandbox
   const liveRunway = sandboxExpenses > 0 ? parseFloat((sandboxSavings / sandboxExpenses).toFixed(1)) : 999;
@@ -182,7 +182,7 @@ export default function Home() {
   };
 
   // Submit current step answer
-  const submitAnswer = async (customAnswer?: string, customFinancials?: any) => {
+  const submitAnswer = async (customAnswer?: string, customFinancials?: { annualIncome?: string; savings?: string }) => {
     const finalAnswer = customAnswer !== undefined ? customAnswer : inputValue;
     if (!finalAnswer && !customFinancials) return;
 
@@ -210,13 +210,13 @@ export default function Home() {
       updatedAnswers[field] = finalAnswer;
     }
     if (customFinancials) {
-      updatedAnswers.annualIncome = customFinancials.annualIncome;
-      updatedAnswers.savings = customFinancials.savings;
+      updatedAnswers.annualIncome = customFinancials.annualIncome || "";
+      updatedAnswers.savings = customFinancials.savings || "";
     }
     setAnswers(updatedAnswers);
 
     try {
-      const body: any = {
+      const body: Record<string, unknown> = {
         interviewId,
         step,
         answer: finalAnswer,
