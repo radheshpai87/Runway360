@@ -408,3 +408,23 @@ I have completely redesigned the landing page and application interface for **Ru
     *   A structured 4-step timeline showing users what to expect.
 5.  **Polished Dashboard Card Styling:** Upgraded all chat bubbles, inputs, and final report cards with border highlights, soft glows, and responsive margins.
 6.  **GitHub Push:** Staged, committed, and pushed the new UI design changes to the `main` branch.
+
+---
+
+## Log 16 - 2026-08-06 15:37:00
+
+### User Prompt
+```text
+add in google auth it is added to the project check maybe you have to fetch
+```
+
+### LLM Response
+I have successfully integrated **Google Auth (NextAuth)** into your Runway360 frontend layout! Here is a summary of the integrations:
+
+1.  **Context Wrapper Setup:** Wrapped your root layout structure in [`layout.tsx`](file:///home/radhesh-pai/Projects/AI-VIBATHON-7TH/src/app/layout.tsx) with the NextAuth `<Providers>` wrapper (`src/app/providers.tsx`), enabling the authentication context globally across the application.
+2.  **Auth Hooks Integration:** Integrated the `useSession()`, `signIn()`, and `signOut()` hooks in [`page.tsx`](file:///home/radhesh-pai/Projects/AI-VIBATHON-7TH/src/app/page.tsx).
+3.  **Authentication Controls in the Header:** Redesigned the navigation bar to dynamically render based on user state:
+    *   **Authenticated State:** Displays the user's Google profile image (or first initial), their username in a pill component, and a sleek "Sign Out" action button.
+    *   **Unauthenticated State:** Displays a prominent, premium "Sign In with Google" button utilizing our gold/champagne theme design.
+4.  **Backend Association:** Confirmed that the `start/route.ts` backend endpoint automatically binds the logged-in user's session profile to the interview records in Supabase.
+5.  **Successful Compilation & Git Push:** Verified that the code builds with zero errors or warnings and pushed these updates to the `main` branch of your remote origin repository.
