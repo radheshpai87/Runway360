@@ -735,7 +735,7 @@ export default function Home() {
 
                 <div className="pt-2">
                   <button 
-                    onClick={startInterview}
+                    onClick={() => startInterview()}
                     className="group relative inline-flex items-center gap-2 bg-[#111111] text-white hover:bg-neutral-900 active:translate-y-0.5 font-bold px-8 py-4 rounded-xl border-2 border-[#111111] transition-all shadow-[4px_4px_0px_0px_rgba(231,181,17,1)] active:shadow-none cursor-pointer"
                   >
                     Start Interactive Audit
