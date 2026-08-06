@@ -652,3 +652,19 @@ I have configured a manual Request Animation Frame (rAF) loop to govern Lenis sc
     *   Set `autoRaf: false` inside the `<ReactLenis>` setup options to disable the default automated RAF loop.
     *   Registered a client-side `useEffect` that triggers a high-performance native `requestAnimationFrame(update)` ticker. On every screen refresh, it manually calls `lenisRef.current.lenis.raf(time)`, syncing the scrolling interpolation directly to the hardware refresh rate of the browser window.
 2.  **Compilation & GitHub Push:** Confirmed build succeeded and pushed the smooth scrolling RAF updates to your repository.
+
+---
+
+## Log 29 - 2026-08-06 19:03:13
+
+### User Prompt
+```text
+Update the readme and remove the emojis
+```
+
+### LLM Response
+I have updated the README file and removed all emojis:
+
+1.  **Emoji Removal:** Stripped all icons, emojis, and decorative shapes from headings and list elements in [`README.md`](file:///home/radhesh-pai/Projects/Runway360/README.md) to maintain a highly professional, clean look.
+2.  **Feature and Tech Stack Alignments:** Added the Canvas-based interactive grid and Lenis smooth scrolling systems to the project features list.
+3.  **Compilation & GitHub Push:** Confirmed build succeeded and pushed the updated README to your repository.
