@@ -341,7 +341,9 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col flex-1 bg-[#EFDFBB] text-[#111111] min-h-screen font-sans">
+    <div className="flex flex-col flex-1 bg-[#EFDFBB] text-[#111111] min-h-screen font-sans relative overflow-hidden">
+      {/* Subtle blueprint grid pattern in the background */}
+      <div className="absolute inset-0 bg-[radial-gradient(#111111_1px,transparent_1px)] [background-size:24px_24px] opacity-[0.05] pointer-events-none z-0"></div>
       
       {/* Editorial Navigation Header */}
       <header className="border-b-2 border-[#111111] bg-[#EFDFBB] sticky top-0 z-50 px-6 py-5 flex items-center justify-between">
@@ -414,7 +416,7 @@ export default function Home() {
 
                 <h1 className="text-4xl lg:text-6xl font-extrabold tracking-tight leading-tight text-[#111111]">
                   Plan your career leap. <br />
-                  <span className="underline decoration-[#E7B511] decoration-wavy decoration-3">
+                  <span className="underline decoration-[#E7B511] decoration-4 underline-offset-4">
                     Master your runway.
                   </span>
                 </h1>
