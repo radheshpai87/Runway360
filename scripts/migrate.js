@@ -1,7 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 const { Client } = require('pg');
-require('dotenv').config({ path: '.env.local' });
 
 async function runMigration() {
   const connectionString = process.env.DATABASE_URL;

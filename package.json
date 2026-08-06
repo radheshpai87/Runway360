@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:migrate": "node scripts/migrate.js"
+    "db:migrate": "node --env-file=.env.local scripts/migrate.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
