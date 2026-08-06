@@ -11,7 +11,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // Client for general public/user operations. Authenticates with cookies/headers automatically in browser.
 export const supabase = (supabaseUrl && supabaseAnonKey)
   ? createClient(supabaseUrl, supabaseAnonKey)
-  : null as any;
+  : null as unknown as ReturnType<typeof createClient>;
 
 // Client for database administrative tasks (e.g. bypassing RLS on server routes if needed)
 export const supabaseAdmin = (supabaseUrl && supabaseServiceKey) 
