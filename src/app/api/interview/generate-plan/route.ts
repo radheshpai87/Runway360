@@ -12,6 +12,44 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing interviewId." }, { status: 400 });
     }
 
+    // If Supabase is not configured or in mock mode, run in mock mode
+    if (!supabaseAdmin || String(interviewId).startsWith("mock-")) {
+      const mockAnswers = body.answers || {};
+      const financialMetrics = calculateFinancialMetrics(
+        mockAnswers.savings || "10000",
+        mockAnswers.annualIncome || "50000",
+        mockAnswers.monthlyExpenses || "20000",
+        mockAnswers.timeframe || "6 months"
+      );
+
+      const result = await generateTransitionPlanAndJourneyMap(
+        {
+          name: mockAnswers.name || "Pivot Candidate",
+          currentRole: mockAnswers.currentRole || "Professional",
+          annualIncome: mockAnswers.annualIncome || "50000",
+          savings: mockAnswers.savings || "10000",
+          location: mockAnswers.location || "Worldwide",
+          monthlyExpenses: mockAnswers.monthlyExpenses || "20000",
+          timeframe: mockAnswers.timeframe || "6 months",
+          targetRole: mockAnswers.targetRole || "Creative Pivot",
+          answers: {
+            q8: { question: mockAnswers.q8Question || "Skill gaps", answer: mockAnswers.q8Answer || "Learning every day" },
+            q9: { question: mockAnswers.q9Question || "Self doubt", answer: mockAnswers.q9Answer || "Supportive friends" },
+            q10: { question: mockAnswers.q10Question || "Wildcard", answer: mockAnswers.q10Answer || "Yes, I will take it" },
+          },
+        },
+        financialMetrics
+      );
+
+      return NextResponse.json({
+        planId: "mock-plan-id-" + Date.now(),
+        financialMetrics,
+        plan: result.plan,
+        journey: result.journey,
+        isMock: true
+      });
+    }
+
     // 1. Fetch the interview record
     const { data: interview, error: fetchError } = await supabaseAdmin
       .from("interviews")
