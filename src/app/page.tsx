@@ -33,7 +33,8 @@ import {
   Layers,
   Activity,
   Sliders,
-  DollarSign
+  DollarSign,
+  History
 } from "lucide-react";
 
 interface Message {
@@ -181,6 +182,7 @@ export default function Home() {
   // App states
   const [started, setStarted] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [interviewId, setInterviewId] = useState<string | null>(null);
   const [step, setStep] = useState(1);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -274,10 +276,10 @@ export default function Home() {
   };
 
   useEffect(() => {
-    if (profileOpen && session) {
+    if ((profileOpen || historyOpen) && session) {
       fetchHistory();
     }
-  }, [profileOpen, session]);
+  }, [profileOpen, historyOpen, session]);
 
   // Helper to fetch the exact question text for the current step
   const getCurrentStepQuestion = (stepNum: number, adaptiveQs: any[]) => {
@@ -590,113 +592,204 @@ export default function Home() {
 
         <div className="flex items-center gap-3">
           {status === "authenticated" ? (
-            <div className="relative">
-              <button 
-                onClick={() => setProfileOpen(!profileOpen)}
-                className="flex items-center gap-2 bg-white border-2 border-[#111111] p-1.5 pr-3 rounded-lg shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] hover:bg-neutral-50 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer"
-              >
-                {session.user?.image ? (
-                  <img 
-                    src={session.user.image} 
-                    alt={session.user.name || "User"} 
-                    className="h-6 w-6 rounded border border-[#111111] object-cover"
-                  />
-                ) : (
-                  <div className="h-6 w-6 rounded bg-[#E7B511] text-[#111111] flex items-center justify-center font-bold text-xs border border-[#111111]">
-                    {session.user?.name?.[0] || "U"}
-                  </div>
-                )}
-                <span className="text-xs font-bold text-[#111111]">{session.user?.name}</span>
-              </button>
-
-              {profileOpen && (
-                <div className="absolute right-0 mt-3 w-64 bg-white border-2 border-[#111111] p-5 rounded-2xl shadow-[4px_4px_0px_0px_rgba(17,17,17,1)] z-50 space-y-4">
-                  <div className="flex items-center gap-3 border-b-2 border-neutral-100 pb-3">
-                    {session.user?.image ? (
-                      <img 
-                        src={session.user.image} 
-                        alt={session.user.name || "User"} 
-                        className="h-10 w-10 rounded border-2 border-[#111111] object-cover"
-                      />
-                    ) : (
-                      <div className="h-10 w-10 rounded bg-[#E7B511] text-[#111111] flex items-center justify-center font-bold text-sm border-2 border-[#111111]">
-                        {session.user?.name?.[0] || "U"}
-                      </div>
-                    )}
-                    <div className="overflow-hidden">
-                      <span className="block text-xs font-extrabold text-[#111111] truncate">{session.user?.name}</span>
-                      <span className="block text-[10px] text-neutral-400 truncate">{session.user?.email}</span>
+            <>
+              {/* Profile Button & Dropdown */}
+              <div className="relative">
+                <button 
+                  onClick={() => {
+                    setProfileOpen(!profileOpen);
+                    setHistoryOpen(false);
+                  }}
+                  className="flex items-center gap-2 bg-white border-2 border-[#111111] p-1.5 pr-3 rounded-lg shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] hover:bg-neutral-50 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer h-9"
+                >
+                  {session.user?.image ? (
+                    <img 
+                      src={session.user.image} 
+                      alt={session.user.name || "User"} 
+                      className="h-6 w-6 rounded border border-[#111111] object-cover"
+                    />
+                  ) : (
+                    <div className="h-6 w-6 rounded bg-[#E7B511] text-[#111111] flex items-center justify-center font-bold text-xs border border-[#111111]">
+                      {session.user?.name?.[0] || "U"}
                     </div>
-                  </div>
+                  )}
+                  <span className="text-xs font-bold text-[#111111]">{session.user?.name}</span>
+                </button>
 
-                  <div className="space-y-1">
-                    <div className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">Account Profile</div>
-                    <div className="rounded-xl bg-[#FAF5EB] border border-[#111111]/10 p-2.5 text-[11px] text-neutral-700 leading-relaxed space-y-1.5">
-                      <div className="flex justify-between">
-                        <span>Status:</span>
-                        <span className="font-bold text-emerald-700">Google Verified</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Pivots Planned:</span>
-                        <span className="font-bold text-[#111111]">{historyList.length || 0} Total</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5 pt-1">
-                    <div className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">Past Audits</div>
-                    <div className="max-h-36 overflow-y-auto space-y-1 pr-1 border-t border-b border-neutral-100 py-1.5">
-                      {historyLoading ? (
-                        <div className="text-[10px] text-neutral-400 text-center py-2">Loading...</div>
-                      ) : historyList.length === 0 ? (
-                        <div className="text-[10px] text-neutral-400 text-center py-2">No audits found</div>
+                {profileOpen && (
+                  <div className="absolute right-0 mt-3 w-64 bg-white border-2 border-[#111111] p-5 rounded-2xl shadow-[4px_4px_0px_0px_rgba(17,17,17,1)] z-50 space-y-4">
+                    <div className="flex items-center gap-3 border-b-2 border-neutral-100 pb-3">
+                      {session.user?.image ? (
+                        <img 
+                          src={session.user.image} 
+                          alt={session.user.name || "User"} 
+                          className="h-10 w-10 rounded border-2 border-[#111111] object-cover"
+                        />
                       ) : (
-                        historyList.map((item, idx) => (
-                          <button
-                            key={item.id}
-                            onClick={() => loadPastInterview(item)}
-                            className="w-full text-left text-[10px] p-2 hover:bg-[#FAF5EB] rounded-lg border border-[#111111]/10 flex items-center justify-between cursor-pointer transition-all"
-                          >
-                            <span className="truncate max-w-[120px] font-bold text-[#111111]">
-                              {item.target_role || `Pivot #${historyList.length - idx}`}
-                            </span>
-                            <span className={`text-[8px] px-1.5 py-0.5 rounded font-bold ${
-                              item.status === 'completed' 
-                                ? 'bg-emerald-100 text-emerald-800' 
-                                : 'bg-amber-100 text-amber-800'
-                            }`}>
-                              {item.status === 'completed' ? 'Completed' : `Step ${item.current_step}`}
-                            </span>
-                          </button>
-                        ))
+                        <div className="h-10 w-10 rounded bg-[#E7B511] text-[#111111] flex items-center justify-center font-bold text-sm border-2 border-[#111111]">
+                          {session.user?.name?.[0] || "U"}
+                        </div>
                       )}
+                      <div className="overflow-hidden">
+                        <span className="block text-xs font-extrabold text-[#111111] truncate">{session.user?.name}</span>
+                        <span className="block text-[10px] text-neutral-400 truncate">{session.user?.email}</span>
+                      </div>
                     </div>
-                  </div>
 
-                  {started && (
+                    <div className="space-y-1">
+                      <div className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">Account Profile</div>
+                      <div className="rounded-xl bg-[#FAF5EB] border border-[#111111]/10 p-2.5 text-[11px] text-neutral-700 leading-relaxed space-y-1.5">
+                        <div className="flex justify-between">
+                          <span>Status:</span>
+                          <span className="font-bold text-emerald-700">Google Verified</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Pivots Planned:</span>
+                          <span className="font-bold text-[#111111]">{historyList.length || 0} Total</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5 pt-1">
+                      <div className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">Past Audits</div>
+                      <div 
+                        data-lenis-prevent
+                        className="max-h-36 overflow-y-auto space-y-1 pr-1 border-t border-b border-neutral-100 py-1.5"
+                      >
+                        {historyLoading ? (
+                          <div className="text-[10px] text-neutral-400 text-center py-2">Loading...</div>
+                        ) : historyList.length === 0 ? (
+                          <div className="text-[10px] text-neutral-400 text-center py-2">No audits found</div>
+                        ) : (
+                          historyList.map((item, idx) => (
+                            <button
+                              key={item.id}
+                              onClick={() => loadPastInterview(item)}
+                              className="w-full text-left text-[10px] p-2 hover:bg-[#FAF5EB] rounded-lg border border-[#111111]/10 flex items-center justify-between cursor-pointer transition-all"
+                            >
+                              <span className="truncate max-w-[120px] font-bold text-[#111111]">
+                                {item.target_role || `Pivot #${historyList.length - idx}`}
+                              </span>
+                              <span className={`text-[8px] px-1.5 py-0.5 rounded font-bold ${
+                                item.status === 'completed' 
+                                  ? 'bg-emerald-100 text-emerald-800' 
+                                  : 'bg-amber-100 text-amber-800'
+                              }`}>
+                                {item.status === 'completed' ? 'Completed' : `Step ${item.current_step}`}
+                              </span>
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                    {started && (
+                      <button 
+                        onClick={() => {
+                          setProfileOpen(false);
+                          resetApp();
+                        }}
+                        className="w-full text-center text-xs font-bold py-2 border-2 border-[#111111] bg-white hover:bg-neutral-50 text-neutral-700 rounded-xl transition-all"
+                      >
+                        Restart Audit
+                      </button>
+                    )}
+
                     <button 
                       onClick={() => {
                         setProfileOpen(false);
-                        resetApp();
+                        signOut();
                       }}
-                      className="w-full text-center text-xs font-bold py-2 border-2 border-[#111111] bg-white hover:bg-neutral-50 text-neutral-700 rounded-xl transition-all"
+                      className="w-full text-center text-xs font-bold py-2 border-2 border-[#111111] bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl transition-all"
                     >
-                      Restart Audit
+                      Sign Out
                     </button>
-                  )}
+                  </div>
+                )}
+              </div>
 
-                  <button 
-                    onClick={() => {
-                      setProfileOpen(false);
-                      signOut();
-                    }}
-                    className="w-full text-center text-xs font-bold py-2 border-2 border-[#111111] bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl transition-all"
-                  >
-                    Sign Out
-                  </button>
-                </div>
-              )}
-            </div>
+              {/* History Button & Dropdown */}
+              <div className="relative">
+                <button 
+                  onClick={() => {
+                    setHistoryOpen(!historyOpen);
+                    setProfileOpen(false);
+                  }}
+                  title="Conversation History"
+                  className="flex items-center justify-center bg-white border-2 border-[#111111] p-1.5 rounded-lg shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] hover:bg-neutral-50 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer h-9 w-9"
+                >
+                  <History className="h-5 w-5 text-[#111111]" />
+                </button>
+
+                {historyOpen && (
+                  <div className="absolute right-0 mt-3 w-80 bg-white border-2 border-[#111111] p-5 rounded-2xl shadow-[4px_4px_0px_0px_rgba(17,17,17,1)] z-50 space-y-4">
+                    <div className="flex items-center justify-between border-b-2 border-neutral-100 pb-2">
+                      <span className="text-xs font-extrabold uppercase tracking-wider text-[#111111]">
+                        Conversation History
+                      </span>
+                      <span className="text-[9px] text-[#5c5950] font-mono font-bold bg-[#EFDFBB] border border-[#111111] px-1.5 py-0.5 rounded">
+                        {historyList.length} Total
+                      </span>
+                    </div>
+
+                    <style dangerouslySetInnerHTML={{__html: `
+                      .no-scrollbar::-webkit-scrollbar {
+                        display: none;
+                      }
+                    `}} />
+
+                    <div 
+                      data-lenis-prevent
+                      className="no-scrollbar space-y-2 max-h-[206px] overflow-y-auto pr-0.5" 
+                      style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+                    >
+                      {historyLoading ? (
+                        <div className="text-[11px] text-neutral-400 text-center py-4 font-bold">Loading history...</div>
+                      ) : historyList.length === 0 ? (
+                        <div className="text-[11px] text-neutral-400 text-center py-4 font-bold">No past conversations found.</div>
+                      ) : (
+                        historyList.map((item: any, idx: number) => {
+                          const dateStr = new Date(item.created_at).toLocaleDateString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit"
+                          });
+                          const isComplete = item.status === "completed";
+                          return (
+                            <button
+                              key={item.id}
+                              onClick={() => {
+                                setHistoryOpen(false);
+                                loadPastInterview(item);
+                              }}
+                              className="w-full text-left bg-[#FAF5EB] hover:bg-[#EFDFBB]/40 border-2 border-[#111111] rounded-xl p-3 transition-all flex flex-col gap-1 relative overflow-hidden shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] hover:shadow-none hover:translate-y-0.5 cursor-pointer"
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-extrabold text-[#111111] truncate max-w-[70%]">
+                                  {item.target_role || `Pivot #${historyList.length - idx}`}
+                                </span>
+                                <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded border border-[#111111] ${
+                                  isComplete 
+                                    ? "bg-emerald-100 text-emerald-800" 
+                                    : "bg-amber-100 text-amber-800"
+                                }`}>
+                                  {isComplete ? "Done" : `Step ${item.current_step}`}
+                                </span>
+                              </div>
+                              <div className="text-[10px] text-neutral-500 flex justify-between items-center mt-1">
+                                <span className="font-medium truncate max-w-[60%]">From: {item.current_role || "Unknown"}</span>
+                                <span className="font-mono text-[9px] font-bold text-neutral-400">{dateStr}</span>
+                              </div>
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
           ) : (
             <button 
               onClick={() => signIn("google")}
@@ -928,7 +1021,10 @@ export default function Home() {
               </div>
 
               {/* Message List */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-5 bg-[#FAF5EB]/20">
+              <div 
+                data-lenis-prevent
+                className="flex-1 overflow-y-auto p-6 space-y-5 bg-[#FAF5EB]/20"
+              >
                 {messages.map((msg, idx) => (
                   <div 
                     key={idx} 
