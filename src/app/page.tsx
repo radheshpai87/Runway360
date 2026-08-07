@@ -267,10 +267,20 @@ export default function Home() {
 
   // Chat scroll anchor
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
+
+  useEffect(() => {
+    if (!isLoading && step < 11) {
+      const timer = setTimeout(() => {
+        inputRef.current?.focus();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, step]);
 
   // Helper: Convert timeline string to months
   function parseTimelineToMonths(timeline: string): number {
@@ -1229,6 +1239,7 @@ export default function Home() {
                 >
                   <input 
                     type="text" 
+                    ref={inputRef}
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     placeholder={
