@@ -636,6 +636,16 @@ export default function Home() {
       {/* Editorial Navigation Header */}
       <header className="sticky top-0 z-50 px-6 py-5 flex items-center justify-between bg-transparent">
         <div className="flex items-center gap-3">
+          {started && (
+            <button
+              onClick={() => setStarted(false)}
+              className="flex items-center gap-1.5 bg-white border-2 border-[#111111] px-3 py-1.5 rounded-lg text-xs font-bold shadow-[2px_2px_0px_0px_rgba(17,17,17,1)] hover:bg-neutral-50 active:translate-y-0.5 active:shadow-none transition-all cursor-pointer mr-1"
+              title="Back to Home"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              <span>Back</span>
+            </button>
+          )}
           <div className="h-8 w-8 rounded-lg bg-[#111111] flex items-center justify-center">
             <Compass className="h-4.5 w-4.5 text-[#EFDFBB]" />
           </div>
