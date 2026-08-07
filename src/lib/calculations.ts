@@ -110,10 +110,10 @@ export function calculateFinancialMetrics(
   const skippedExpenses = !expensesInput || expensesInput.toLowerCase().includes("skip") || expensesInput.toLowerCase().includes("secret");
   const skippedSavings = !savingsInput || savingsInput.toLowerCase().includes("skip") || savingsInput.toLowerCase().includes("secret");
 
-  // Fallbacks: Expenses default to $2,500/mo, Savings to $0, Income to $0
+  // Fallbacks: Expenses default to ₹25,000/mo, Savings to ₹0, Income to ₹0
   const savings = parseFinancialValue(savingsInput, 0);
   const annualIncome = parseFinancialValue(incomeInput, 0);
-  const monthlyExpenses = parseFinancialValue(expensesInput, 2500);
+  const monthlyExpenses = parseFinancialValue(expensesInput, 25000);
   const targetTimelineMonths = parseTimelineToMonths(timelineInput, 6);
 
   // Math runway in months

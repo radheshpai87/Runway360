@@ -314,8 +314,8 @@ A10: ${userData.answers.q10.answer}
 
 ### Calculated Financial Metrics:
 - Calculated Runway: ${financialMetrics.runwayMonths} months
-- Required Buffer (6 months): $${financialMetrics.requiredBuffer}
-- Financial Shortfall: $${financialMetrics.shortfallAmount}
+- Required Buffer (6 months): ₹${financialMetrics.requiredBuffer}
+- Financial Shortfall: ₹${financialMetrics.shortfallAmount}
 - Runway Deficit against Target Timeline: ${financialMetrics.runwayDeficitMonths} months
 - Risk Level: ${financialMetrics.riskLevel} (Safety Net Status: ${financialMetrics.safetyNetStatus})
 - Custom Formula Used: ${financialMetrics.isCustomFormulaUsed ? "Yes (due to skipped financials)" : "No"}
@@ -347,7 +347,7 @@ Synthesize this data and output the JSON response containing the Personalized Tr
           "Build a portfolio showcasing 3 high-quality transition projects.",
           "Target full-time job search in the final 2 months of the " + userData.timeframe + " timeframe."
         ],
-        safetyNet: `Based on your expenses of $${financialMetrics.monthlyExpenses}/mo and savings of $${financialMetrics.savings}, you have a runway of ${financialMetrics.runwayMonths} months. We recommend a minimum of 6 months ($${financialMetrics.requiredBuffer}). You are ${financialMetrics.runwayDeficitMonths > 0 ? "underfunded" : "adequately funded"} for your ${userData.timeframe} pivot timeline.`,
+        safetyNet: `Based on your expenses of ₹${financialMetrics.monthlyExpenses}/mo and savings of ₹${financialMetrics.savings}, you have a runway of ${financialMetrics.runwayMonths} months. We recommend a minimum of 6 months (₹${financialMetrics.requiredBuffer}). You are ${financialMetrics.runwayDeficitMonths > 0 ? "underfunded" : "adequately funded"} for your ${userData.timeframe} pivot timeline.`,
         skillBuilding: [
           "Learn industry-standard tools for " + userData.targetRole + ".",
           "Seek a mentor active in the field."
@@ -386,7 +386,7 @@ Synthesize this data and output the JSON response containing the Personalized Tr
           assessment: `A transition timeline of ${userData.timeframe} is ${financialMetrics.riskLevel === "high" ? "extremely tight given your current runway" : "reasonable, but requires execution of safety measures"}.`,
           rating: financialMetrics.riskLevel === "high" ? "high_risk" : financialMetrics.runwayMonths >= 6 ? "realistic" : "optimistic",
           advice: financialMetrics.riskLevel === "high" 
-            ? "We strongly advise postponing your quit date until you save at least " + financialMetrics.requiredBuffer + " or establish a guaranteed bridge income."
+            ? "We strongly advise postponing your quit date until you save at least ₹" + financialMetrics.requiredBuffer.toLocaleString('en-IN') + " or establish a guaranteed bridge income."
             : "Monitor your expenses closely and execute on the timeline aggressively."
         }
       }
