@@ -880,5 +880,20 @@ Added a Back button to the header:
 2. **Navigation Flow**: Clicking the button sets `started` to false, returning the user to the landing page/home page view.
 3. **Neobrutalist Styling**: Styled the button using the neobrutalist theme (white background, bold border, and drop shadow).
 
+---
+
+## Log 44 - 2026-08-07 16:09:48
+
+### User Prompt
+```text
+can you hide the chat ID from displying it
+```
+
+### LLM Response
+Removed the interview session ID from the chat panel:
+1. **Removed UI Node**: Deleted the `ID: {interviewId?.substring(0, 8)}` span from the chatbot panel header inside [`page.tsx`](file:///home/hari/Runway360/src/app/page.tsx).
+2. **Result**: The header now only shows the active step progress and the "Restart" button, leaving the chat ID clean and hidden.
+
+
 
 
