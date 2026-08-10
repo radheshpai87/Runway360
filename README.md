@@ -14,38 +14,45 @@ Next-generation career transition coach and financial runway simulator designed 
 This diagram illustrates the data flow from the Gen Z Neobrutalist Client interface down to the AI model orchestration and database persistence layers.
 
 ```mermaid
-graph TD
-    subgraph Client ["Client Interface (Gen Z Neobrutalist UI)"]
-        Landing["Landing Page / Sandbox Preview"]
-        Wizard["AI Intake Wizard (10 Steps)"]
-        Dashboard["Dashboard (Checklists & Journey Maps)"]
+graph LR
+    classDef clientClass fill:#EFDFBB,stroke:#111111,stroke-width:2px;
+    classDef serverClass fill:#FAF5EB,stroke:#111111,stroke-width:2px;
+    classDef coreClass fill:#E7B511,stroke:#111111,stroke-width:2px;
+    classDef dbClass fill:#FAF5EB,stroke:#111111,stroke-width:2px,stroke-dasharray: 5 5;
+
+    subgraph Client ["Client Interface"]
+        Landing["Landing Page"]:::clientClass
+        Wizard["Intake Wizard"]:::clientClass
+        Dashboard["Pivot Dashboard"]:::clientClass
     end
 
-    subgraph Server ["Next.js Server API Routes"]
-        AuthRoute["/api/auth (NextAuth Google)"]
-        IntakeRoute["/api/interview/start & submit-answer"]
-        PlanRoute["/api/interview/generate-plan"]
-        HistoryRoute["/api/interview/history"]
+    subgraph Server ["Next.js Server API"]
+        AuthRoute["Auth Handler"]:::serverClass
+        IntakeRoute["Intake Endpoint"]:::serverClass
+        PlanRoute["Plan Generation"]:::serverClass
+        HistoryRoute["History Fetcher"]:::serverClass
     end
 
-    subgraph LLM ["AI Core Integration"]
-        Gemini["Google Gemini Pro Engine"]
+    subgraph Core ["AI Orchestration"]
+        Gemini["Gemini Pro Engine"]:::coreClass
     end
 
-    subgraph DB ["Data Layer"]
-        Supabase["Supabase Database (PostgreSQL)"]
+    subgraph DB ["Data Store"]
+        Supabase["Supabase PostgreSQL"]:::dbClass
     end
 
-    Landing -->|Sign In| AuthRoute
-    AuthRoute -->|Session Profile| Wizard
-    Wizard -->|Submit Responses| IntakeRoute
-    IntakeRoute -->|Generate Custom Qs| Gemini
-    IntakeRoute -->|Store Drafts| Supabase
-    Wizard -->|Generate Final Plan| PlanRoute
-    PlanRoute -->|Prompt Engineering| Gemini
-    PlanRoute -->|Save Transition Plan| Supabase
-    Dashboard -->|Load Plan & Progress| HistoryRoute
-    HistoryRoute -->|Fetch Records| Supabase
+    Landing -->|1. Sign In| AuthRoute
+    AuthRoute -->|2. Setup Session| Wizard
+    Wizard -->|3. Save Answers| IntakeRoute
+    IntakeRoute -->|4. Generate Qs| Gemini
+    IntakeRoute -->|5. Store Session| Supabase
+    Wizard -->|6. Compile Plan| PlanRoute
+    PlanRoute -->|7. Orchestrate Blueprint| Gemini
+    PlanRoute -->|8. Save Plan| Supabase
+    Dashboard -->|9. Retrieve Profile| HistoryRoute
+    HistoryRoute -->|10. Fetch Data| Supabase
+
+    linkStyle default stroke:#111111,stroke-width:2px;
 ```
 
 ---
