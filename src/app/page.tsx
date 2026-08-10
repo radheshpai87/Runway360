@@ -5,37 +5,24 @@ import { useSession, signIn, signOut } from "next-auth/react";
 import { LandingHero } from "@/components/LandingHero";
 import { InteractiveSandbox } from "@/components/InteractiveSandbox";
 import { 
-  TrendingUp, 
   Coins, 
   Calendar, 
   Map, 
-  User, 
   Sparkles, 
-  CheckCircle, 
-  AlertCircle, 
-  X, 
   ArrowRight, 
   Lock, 
   Unlock, 
   ArrowLeft, 
-  HelpCircle, 
   Briefcase, 
-  MapPin,
-  RefreshCw,
-  ChevronRight,
+  ChevronRight, 
   ShieldAlert,
   Frown,
   Meh,
   Smile,
   Compass,
-  ArrowUpRight,
   ShieldCheck,
   TrendingDown,
   Info,
-  Layers,
-  Activity,
-  Sliders,
-  DollarSign,
   History
 } from "lucide-react";
 
@@ -44,6 +31,40 @@ interface Message {
   text: string;
   isFinancial?: boolean;
 }
+
+interface AdaptiveQuestion {
+  id: number;
+  question: string;
+  answer: string | null;
+  type?: string;
+}
+
+interface PastInterview {
+  id: string;
+  name?: string | null;
+  current_role?: string | null;
+  annual_income?: string | null;
+  savings?: string | null;
+  location?: string | null;
+  monthly_expenses?: string | null;
+  timeframe?: string | null;
+  target_role?: string | null;
+  adaptive_questions?: AdaptiveQuestion[] | null;
+  status: string;
+  current_step: number;
+  created_at: string;
+  plan?: PlanData | null;
+}
+
+const STATIC_QUESTIONS: Record<number, string> = {
+  1: "To start: What's your name?",
+  2: "First, what is your current career role?",
+  3: "What is your current annual income and total savings (if any)?",
+  4: "Where are you located (city/country)?",
+  5: "What are your average monthly expenses?",
+  6: "How much time do you need to achieve your goal—be specific (e.g., '6 months', '2 years').",
+  7: "What do you want to pursue after quitting? (Optional, but strongly encourage the user to answer—their answer shapes everything that follows.)",
+};
 
 interface FinancialMetrics {
   savings: number;
@@ -119,8 +140,8 @@ export default function Home() {
 
     initDots();
 
-    let targetMouse = { x: -1000, y: -1000 };
-    let localMouse = { x: -1000, y: -1000 };
+    const targetMouse = { x: -1000, y: -1000 };
+    const localMouse = { x: -1000, y: -1000 };
 
     const handleMouseMove = (e: MouseEvent) => {
       targetMouse.x = e.clientX;
@@ -210,7 +231,7 @@ export default function Home() {
   });
 
   // Adaptive list from step 8
-  const [adaptiveQuestions, setAdaptiveQuestions] = useState<{ id: number; question: string; answer: string | null; type: string }[]>([]);
+  const [_adaptiveQuestions, setAdaptiveQuestions] = useState<AdaptiveQuestion[]>([]);
 
   // Checklist State tracking completed days per phase
   const [completedDays, setCompletedDays] = useState<Record<number, Record<number, boolean>>>(() => {
@@ -218,7 +239,9 @@ export default function Home() {
       try {
         const saved = localStorage.getItem("rw360_completed_days");
         if (saved) return JSON.parse(saved);
-      } catch (e) {}
+      } catch {
+        // Suppress
+      }
     }
     return { 0: {}, 1: {}, 2: {} };
   });
@@ -228,7 +251,9 @@ export default function Home() {
       try {
         const saved = localStorage.getItem("rw360_active_phase");
         if (saved) return parseInt(saved);
-      } catch (e) {}
+      } catch {
+        // Suppress
+      }
     }
     return 0;
   });
@@ -258,7 +283,7 @@ export default function Home() {
 
   // Generated Plan State
   const [planData, setPlanData] = useState<PlanData | null>(null);
-  const [historyList, setHistoryList] = useState<any[]>([]);
+  const [historyList, setHistoryList] = useState<PastInterview[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"plan" | "journey" | "runway">("plan");
 
@@ -318,7 +343,6 @@ export default function Home() {
   const liveRunway = sandboxExpenses > 0 ? parseFloat((sandboxSavings / sandboxExpenses).toFixed(1)) : 999;
   const liveBuffer = sandboxExpenses * 6;
   const liveShortfall = Math.max(0, liveBuffer - sandboxSavings);
-  const liveDeficit = Math.max(0, sandboxTimeline - liveRunway);
   const liveStatus = liveRunway >= 6 ? "safe" : liveRunway >= 3 ? "moderate" : "underfunded";
 
   // Fetch history list when profile is opened
@@ -344,23 +368,16 @@ export default function Home() {
   }, [profileOpen, historyOpen, session]);
 
   // Helper to fetch the exact question text for the current step
-  const getCurrentStepQuestion = (stepNum: number, adaptiveQs: any[]) => {
-    if (stepNum === 1) return "To start: What's your name?";
-    if (stepNum === 2) return "First, what is your current career role?";
-    if (stepNum === 3) return "What is your current annual income and total savings (if any)?";
-    if (stepNum === 4) return "Where are you located (city/country)?";
-    if (stepNum === 5) return "What are your average monthly expenses?";
-    if (stepNum === 6) return "How much time do you need to achieve your goal—be specific (e.g., '6 months', '2 years').";
-    if (stepNum === 7) return "What do you want to pursue after quitting? (Optional, but strongly encourage the user to answer—their answer shapes everything that follows.)";
-    if (stepNum >= 8 && stepNum <= 10 && adaptiveQs) {
-      const q = adaptiveQs.find((q: any) => q.id === stepNum);
-      return q ? q.question : "Please answer the follow-up question.";
+  const getCurrentStepQuestion = (stepNum: number, adaptiveQs: AdaptiveQuestion[]) => {
+    if (stepNum <= 7) {
+      return STATIC_QUESTIONS[stepNum];
     }
-    return "";
+    const q = adaptiveQs.find((q: AdaptiveQuestion) => q.id === stepNum);
+    return q ? q.question : "";
   };
 
   // Load a selected past interview from history
-  const loadPastInterview = (item: any) => {
+  const loadPastInterview = (item: PastInterview) => {
     setInterviewId(item.id);
     setStarted(true);
     setProfileOpen(false);
@@ -385,7 +402,7 @@ export default function Home() {
     const adaptiveQs = item.adaptive_questions || [];
     setAdaptiveQuestions(adaptiveQs);
 
-    adaptiveQs.forEach((q: any) => {
+    adaptiveQs.forEach((q: AdaptiveQuestion) => {
       if (q.id === 8) {
         savedAnswers.q8Question = q.question || "";
         savedAnswers.q8Answer = q.answer || "";
@@ -415,7 +432,7 @@ export default function Home() {
   };
 
   // Start the interview session
-  const startInterview = async (forceNewSession: any = false) => {
+  const startInterview = async (forceNewSession: boolean = false) => {
     setIsLoading(true);
     const isForce = forceNewSession === true;
     try {
@@ -788,7 +805,7 @@ export default function Home() {
                       ) : historyList.length === 0 ? (
                         <div className="text-[11px] text-neutral-400 text-center py-4 font-bold">No past conversations found.</div>
                       ) : (
-                        historyList.map((item: any, idx: number) => {
+                        historyList.map((item: PastInterview, idx: number) => {
                           const dateStr = new Date(item.created_at).toLocaleDateString(undefined, {
                             month: "short",
                             day: "numeric",

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
-import { generateAdaptiveQuestions, executeFailoverLLM } from "@/lib/llm";
+import { executeFailoverLLM } from "@/lib/llm";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
@@ -45,8 +45,17 @@ export async function POST(req: NextRequest) {
           .order("created_at", { ascending: false })
           .limit(3);
 
+        interface PastInterviewItem {
+          current_role?: string | null;
+          target_role?: string | null;
+          savings?: string | null;
+          monthly_expenses?: string | null;
+          timeframe?: string | null;
+          location?: string | null;
+        }
+
         if (pastInterviews && pastInterviews.length > 0) {
-          historyContext = pastInterviews.map((item: any, idx: number) => `
+          historyContext = pastInterviews.map((item: PastInterviewItem, idx: number) => `
 Past Session #${idx + 1}:
 - Current Role: ${item.current_role || "Unknown"}
 - Target Goal: ${item.target_role || "Unknown"}
@@ -56,7 +65,7 @@ Past Session #${idx + 1}:
 - Location: ${item.location || "Unknown"}
 `).join("\n");
         }
-      } catch (err) {
+      } catch {
         // Suppress
       }
     }
@@ -66,7 +75,14 @@ Past Session #${idx + 1}:
     if (step <= 7) {
       currentQuestion = STATIC_QUESTIONS[step];
     } else {
-      let adaptiveQs: any[] = [];
+      interface AdaptiveQuestion {
+        id: number;
+        question: string;
+        answer: string | null;
+        type?: string;
+      }
+
+      let adaptiveQs: AdaptiveQuestion[] = [];
       if (supabaseAdmin && !String(interviewId).startsWith("mock-")) {
         try {
           const { data: interview } = await supabaseAdmin
@@ -74,12 +90,12 @@ Past Session #${idx + 1}:
             .select("adaptive_questions")
             .eq("id", interviewId)
             .single();
-          adaptiveQs = interview?.adaptive_questions || [];
-        } catch (e) {}
+          adaptiveQs = (interview?.adaptive_questions as AdaptiveQuestion[]) || [];
+        } catch {}
       } else if (body.adaptiveQuestions) {
         adaptiveQs = body.adaptiveQuestions;
       }
-      const q = adaptiveQs.find((q: any) => q.id === step);
+      const q = adaptiveQs.find((q: AdaptiveQuestion) => q.id === step);
       currentQuestion = q ? q.question : "Please answer the follow-up question.";
     }
 

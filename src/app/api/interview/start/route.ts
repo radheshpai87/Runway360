@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     try {
       const body = await req.json();
       forceNew = !!body?.forceNew;
-    } catch (e) {
+    } catch {
       // Request might not have a body, which is fine
     }
 
@@ -60,9 +60,15 @@ export async function POST(req: NextRequest) {
           targetRole: existing.target_role || "",
         };
 
+        interface AdaptiveQuestion {
+          id: number;
+          question?: string;
+          answer?: string;
+        }
+
         // Parse adaptive answers if any exist
-        const adaptiveQs = existing.adaptive_questions || [];
-        adaptiveQs.forEach((q: any) => {
+        const adaptiveQs = (existing.adaptive_questions as AdaptiveQuestion[]) || [];
+        adaptiveQs.forEach((q: AdaptiveQuestion) => {
           if (q.id === 8) {
             savedAnswers.q8Question = q.question || "";
             savedAnswers.q8Answer = q.answer || "";

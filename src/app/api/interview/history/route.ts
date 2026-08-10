@@ -39,9 +39,23 @@ export async function GET() {
       return NextResponse.json({ error: "Failed to fetch history" }, { status: 500 });
     }
 
+    interface TransitionPlan {
+      id: string;
+      plan_data: unknown;
+      journey_data: unknown;
+      financial_metrics: unknown;
+    }
+
+    interface InterviewItem {
+      transition_plans?: TransitionPlan[] | TransitionPlan | null;
+      [key: string]: unknown;
+    }
+
     // Map transition_plans to make it easier for frontend consumption
-    const formattedData = data.map((item: any) => {
-      const plan = item.transition_plans?.[0] || item.transition_plans || null;
+    const formattedData = (data || []).map((item: InterviewItem) => {
+      const plan = Array.isArray(item.transition_plans)
+        ? item.transition_plans[0]
+        : (item.transition_plans || null);
       return {
         ...item,
         plan: plan

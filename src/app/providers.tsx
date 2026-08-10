@@ -3,9 +3,16 @@
 import { SessionProvider } from "next-auth/react";
 import { ReactLenis } from "lenis/react";
 import React, { useEffect, useRef } from "react";
+import Lenis from "lenis";
+
+interface LenisRef {
+  lenis: Lenis;
+  wrapper: HTMLDivElement | null;
+  content: HTMLDivElement | null;
+}
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  const lenisRef = useRef<any>(null);
+  const lenisRef = useRef<LenisRef>(null);
 
   useEffect(() => {
     let rafId: number;
