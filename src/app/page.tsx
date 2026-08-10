@@ -282,6 +282,12 @@ export default function Home() {
     }
   }, [isLoading, step]);
 
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      setStarted(false);
+    }
+  }, [status]);
+
   // Helper: Convert timeline string to months
   function parseTimelineToMonths(timeline: string): number {
     const clean = timeline.toLowerCase();
@@ -862,10 +868,10 @@ export default function Home() {
 
                 <div className="pt-2">
                   <button 
-                    onClick={() => startInterview()}
+                    onClick={() => status === "authenticated" ? startInterview() : signIn("google")}
                     className="group relative inline-flex items-center gap-2 bg-[#111111] text-white hover:bg-neutral-900 active:translate-y-0.5 font-bold px-8 py-4 rounded-xl border-2 border-[#111111] transition-all shadow-[4px_4px_0px_0px_rgba(231,181,17,1)] active:shadow-none cursor-pointer"
                   >
-                    Start Interactive Audit
+                    {status === "authenticated" ? "Start Interactive Audit" : "Sign In to Start Audit"}
                     <ArrowUpRight className="h-4.5 w-4.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                   </button>
                 </div>

@@ -6,8 +6,11 @@ import { supabaseAdmin } from "@/lib/supabase";
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    const userId = session?.user ? (session.user as { id?: string }).id : null;
-    const userName = session?.user?.name || null;
+    if (!session || !session.user) {
+      return NextResponse.json({ error: "Unauthorized. Please log in first." }, { status: 401 });
+    }
+    const userId = (session.user as { id?: string }).id || null;
+    const userName = session.user.name || null;
     const hasName = !!userName;
 
     let forceNew = false;

@@ -29,7 +29,10 @@ export async function POST(req: NextRequest) {
 
     // 1. Fetch user session and past history context to enable "remembering"
     const session = await getServerSession(authOptions);
-    const userId = session?.user ? (session.user as { id?: string }).id : null;
+    if (!session || !session.user) {
+      return NextResponse.json({ error: "Unauthorized. Please log in first." }, { status: 401 });
+    }
+    const userId = (session.user as { id?: string }).id || null;
 
     let historyContext = "";
     if (userId && supabaseAdmin) {
