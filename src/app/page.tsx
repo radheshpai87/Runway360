@@ -929,7 +929,7 @@ export default function Home() {
                 <div className="h-8 w-8 rounded bg-[#EFDFBB] border border-[#111111] flex items-center justify-center text-[#111111] font-bold text-sm">
                   ₹
                 </div>
-                <h3 className="font-extrabold text-[#111111] text-base">Runway Calibrator</h3>
+                <h2 className="font-extrabold text-[#111111] text-base">Runway Calibrator</h2>
                 <p className="text-xs text-[#5c5950] leading-relaxed">
                   Real-time interactive financial modeling. Tweak savings, monthly expenses, and targets to calculate emergency safety buffers and timeline viability.
                 </p>
@@ -939,7 +939,7 @@ export default function Home() {
                 <div className="h-8 w-8 rounded bg-[#EFDFBB] border border-[#111111] flex items-center justify-center text-[#111111] font-bold text-sm">
                   A
                 </div>
-                <h3 className="font-extrabold text-[#111111] text-base">Adaptive Prompts</h3>
+                <h2 className="font-extrabold text-[#111111] text-base">Adaptive Prompts</h2>
                 <p className="text-xs text-[#5c5950] leading-relaxed">
                   Once baseline parameters are set, Gemini AI generates dynamic custom queries (Q8-Q10) to probe specific skills gaps, transition risks, and commitments.
                 </p>
@@ -949,7 +949,7 @@ export default function Home() {
                 <div className="h-8 w-8 rounded bg-[#EFDFBB] border border-[#111111] flex items-center justify-center text-[#111111] font-bold text-sm">
                   M
                 </div>
-                <h3 className="font-extrabold text-[#111111] text-base">Actionable Maps</h3>
+                <h2 className="font-extrabold text-[#111111] text-base">Actionable Maps</h2>
                 <p className="text-xs text-[#5c5950] leading-relaxed">
                   Export structured transition checklists (30 days, 3 months, mid-term) alongside a milestone-based timeline mapping emotional and mental pivot phases.
                 </p>
@@ -963,10 +963,10 @@ export default function Home() {
               {/* Transition Metrics Index */}
               <div className="lg:col-span-5 bg-white border-2 border-[#111111] rounded-2xl p-6 shadow-[4px_4px_0px_0px_rgba(17,17,17,1)] flex flex-col justify-between space-y-6">
                 <div>
-                  <h3 className="font-extrabold text-[#111111] text-lg uppercase tracking-wider flex items-center gap-2">
+                  <h2 className="font-extrabold text-[#111111] text-lg uppercase tracking-wider flex items-center gap-2">
                     <Activity className="h-5 w-5 text-[#E7B511]" />
                     Calibration Index
-                  </h3>
+                  </h2>
                   <p className="text-xs text-[#5c5950] mt-1">Recommended baseline metrics for Gen Z transition readiness.</p>
                 </div>
 
@@ -997,10 +997,10 @@ export default function Home() {
               {/* Checklist Blueprint Preview */}
               <div className="lg:col-span-7 bg-white border-2 border-[#111111] rounded-2xl p-6 shadow-[4px_4px_0px_0px_rgba(17,17,17,1)] space-y-5">
                 <div>
-                  <h3 className="font-extrabold text-[#111111] text-lg uppercase tracking-wider flex items-center gap-2">
+                  <h2 className="font-extrabold text-[#111111] text-lg uppercase tracking-wider flex items-center gap-2">
                     <Layers className="h-5 w-5 text-[#E7B511]" />
                     Example Blueprint Checklist
-                  </h3>
+                  </h2>
                   <p className="text-xs text-[#5c5950] mt-1">A glimpse of the visual phased task maps generated at checkout.</p>
                 </div>
 
@@ -1962,6 +1962,13 @@ export default function Home() {
         )}
 
       </div>
+
+      {/* Global Footer YMYL Disclaimer */}
+      <footer className="w-full text-center py-6 px-4 border-t border-[#111111]/10 bg-transparent relative z-10 mt-auto">
+        <p className="text-[10px] text-neutral-500 max-w-3xl mx-auto leading-relaxed">
+          Disclaimer: Runway360 is an informational, simulation-based career planning workspace. All runway calculations, risk index benchmarks, and generated task blueprints are mathematical projections and do not constitute certified financial, career, legal, or investment advice.
+        </p>
+      </footer>
     </div>
   );
 }

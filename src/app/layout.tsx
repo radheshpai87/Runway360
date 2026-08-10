@@ -11,6 +11,18 @@ const poppins = Poppins({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://runway360.vercel.app"),
+  alternates: {
+    canonical: "/",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+    },
+  },
   title: "Runway360 — Gen Z Career Transition Coach & Financial Runway Calibrator",
   description: "Calculate your financial runway, assess risk thresholds, and build a personalized roadmap for your career pivot.",
   openGraph: {
