@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="public/readme_header.jpg" alt="Runway360 Header" width="100%" />
+</p>
+
 # Runway360
 
 A math-backed planning workspace and interactive coach designed for managing career transitions with financial modeling and adaptive AI query mapping.
